@@ -3,17 +3,11 @@
 import { useEffect, useState } from 'react'
 import { searchSpotifySongs } from '@/lib/logic'
 import SongCard from './SongCard'
+import SongTable from './SongTable'
 export default function SearchBar() {
   const [query, setQuery] = useState('')
   const [searchResults, setSearchResults] = useState([])
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    console.log('SearchResults: ', searchResults)
-    // const temp = await searchSpotifySongs(query)
-    // setSearchResults(temp)
-    // console.log('temp: ', temp)
-  }
+  const [songList, setSongList] = useState([])
 
   const handleInputChange = (e) => {
     setQuery(e.target.value)
@@ -35,11 +29,18 @@ export default function SearchBar() {
     }
   }, [query])
   return (
-    <div className="w-full p-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full flex flex-col items-center"
-      >
+    <div className="w-full h-lvh p-4 flex flex-col justify-around">
+      {searchResults.length > 0 ? (
+        <div className="mt-8 flex flex-col items-center">
+          {searchResults.map((result) => (
+            <div className="w-[75%] p-1" key={result.id}>
+              <SongCard song={result} setSongList={setSongList} />
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {songList.length > 0 ? <SongTable songList={songList} /> : null}
+      <form className="w-full flex flex-col items-center">
         <input
           type="text"
           value={query}
@@ -47,21 +48,8 @@ export default function SearchBar() {
           placeholder="Search for a song..."
           className="p-2 border border-gray-300 rounded-lg shadow-sm w-96"
         />
-        <button
-          type="submit"
-          className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        >
-          Search
-        </button>
       </form>
-
-      <div className="mt-8">
-        {searchResults.map((result) => (
-          <div key={result.id}>
-            <SongCard song={result} />
-          </div>
-        ))}
-      </div>
+      <button onClick={() => console.log('SongList: ', songList)}>Check</button>
     </div>
   )
 }

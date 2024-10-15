@@ -1,14 +1,21 @@
-import { Modal, Typography, Box } from '@mui/material'
-import SongCard from './SongCard'
-import { useState } from 'react'
+import { Modal, Typography, Box, Button } from '@mui/material'
+import Song from './Song'
+import { use, useState } from 'react'
 import TagsInput from 'react-tagsinput'
 import 'react-tagsinput/react-tagsinput.css'
 
-const SongModal = ({ open, handleClose, song }) => {
+const SongModal = ({ open, handleClose, song, setSongList, setOpen }) => {
   const [tags, setTags] = useState([])
 
   const handleChange = (tags) => {
     setTags(tags)
+  }
+
+  const handleClick = () => {
+    const tempSong = { ...song, userTags: tags }
+
+    setSongList((prev) => [...prev, tempSong])
+    handleClose()
   }
 
   const style = {
@@ -16,7 +23,7 @@ const SongModal = ({ open, handleClose, song }) => {
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
-    width: 400,
+    width: 600,
     bgcolor: 'background.paper',
     border: '2px solid #000',
     boxShadow: 24,
@@ -30,8 +37,9 @@ const SongModal = ({ open, handleClose, song }) => {
       aria-describedby="modal-modal-description"
     >
       <Box sx={style}>
-        <SongCard song={song} />
+        <Song song={song} />
         <TagsInput value={tags} onChange={handleChange} />
+        <Button onClick={handleClick}>Add Song</Button>
       </Box>
     </Modal>
   )
