@@ -1,38 +1,43 @@
 'use client'
 
-import { useState } from 'react'
-import axios from 'axios'
+import { useEffect, useState } from 'react'
+import { searchSpotifySongs } from '@/lib/logic'
+import Song from './Song'
 
 export default function SearchBar() {
   const [query, setQuery] = useState('')
-  const [songs, setSongs] = useState([])
+  const [searchResults, setSearchResults] = useState([])
 
-  const searchSongs = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-
-    const tokenResponse = await axios.get('/api/spotify-token')
-    const token = tokenResponse.data.access_token
-
-    const result = await axios.get(
-      `https://api.spotify.com/v1/search?q=${query}&type=track`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    )
-
-    setSongs(result.data.tracks.items)
+    const temp = await searchSpotifySongs(query)
+    setSearchResults(temp)
+    console.log('temp: ', temp)
   }
 
   const handleInputChange = (e) => {
     setQuery(e.target.value)
+    if (e.target.value.length < 3) {
+      setSearchResults([])
+    }
   }
 
+  useEffect(() => {
+    if (query.length > 3) {
+      async function search() {
+        const temp = await searchSpotifySongs(query)
+        setSearchResults(temp)
+      }
+      search()
+
+      //return a list of 5-10 'tracks/artists/albums' from spotify that match
+      //passing the query into a function that will live in logic that will handle all the API calling
+    }
+  }, [query])
   return (
     <div className="w-full p-4">
       <form
-        onSubmit={searchSongs}
+        onSubmit={handleSubmit}
         className="w-full flex flex-col items-center"
       >
         <input
@@ -51,26 +56,15 @@ export default function SearchBar() {
       </form>
 
       <div className="mt-8">
-        {songs.length > 0 && (
-          <ul>
-            {songs.map((song) => (
-              <li
-                key={song.id}
-                className="flex items-center p-2 hover:bg-gray-100 cursor-pointer"
-              >
-                <img
-                  src={song.album.images[0]?.url}
-                  alt={song.name}
-                  className="w-12 h-12 mr-4"
-                />
-                <div>
-                  <p className="font-bold">{song.name}</p>
-                  <p className="text-gray-500">{song.artists[0].name}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+        {searchResults.map((result) => (
+          <div key={result.id}>
+            <Song song={result} />
+            <p>Song: {result.name}</p>
+            <p>Artist: {result.artists[0].name}</p>
+            <p>Album: {result.album.name}</p>
+            <p>Year: {new Date(result.album.release_date).getFullYear()}</p>
+          </div>
+        ))}
       </div>
     </div>
   )
