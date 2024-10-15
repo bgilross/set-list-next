@@ -51,7 +51,7 @@ export async function searchSpotifySongs(query) {
 
   try {
     const result = await axios.get(
-      `https://api.spotify.com/v1/search?q=${query}&type=track&limit=7`,
+      `https://api.spotify.com/v1/search?q=${query}&type=track&limit=6`,
       {
         headers: {
           Authorization: `Bearer ${token}`,

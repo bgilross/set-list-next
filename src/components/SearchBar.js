@@ -5,10 +5,9 @@ import { searchSpotifySongs } from '@/lib/logic'
 import SongCard from './SongCard'
 import SongTable from './SongTable'
 import BasicModal from './ModalTest'
-export default function SearchBar() {
+import { Paper } from '@mui/material'
+export default function SearchBar({ setSearchResults, searchResults }) {
   const [query, setQuery] = useState('')
-  const [searchResults, setSearchResults] = useState([])
-  const [songList, setSongList] = useState([])
 
   const handleInputChange = (e) => {
     setQuery(e.target.value)
@@ -24,41 +23,35 @@ export default function SearchBar() {
         setSearchResults(temp)
       }
       search()
-
-      //return a list of 5-10 'tracks/artists/albums' from spotify that match
-      //passing the query into a function that will live in logic that will handle all the API calling
     }
   }, [query])
+
   return (
-    <div className="w-full h-lvh p-4 flex flex-col justify-around">
-      <div className="flex">
-        {searchResults.length > 0 ? (
-          <div className="mt-8 flex flex-col items-center h-[e]">
-            {searchResults.map((result) => (
-              <div className="w-[75%] p-1" key={result.id}>
-                <SongCard song={result} setSongList={setSongList} />
-              </div>
-            ))}
-          </div>
-        ) : null}
-        {songList.length > 0 ? (
-          <div className="w-[50%]">
-            <SongTable songList={songList} />
-          </div>
-        ) : null}
-      </div>
-
-      <div className="flex justify-center">
-        <input
-          type="text"
-          value={query}
-          onChange={handleInputChange}
-          placeholder="Search for a song..."
-          className="p-2 border border-gray-300 rounded-lg shadow-sm w-96"
-        />
-      </div>
-
-      {/* <button onClick={() => console.log('SongList: ', songList)}>Check</button> */}
-    </div>
+    <Paper
+      elevation={7}
+      className="flex justify-center m-8 w-[90%] p-8 bg-green-100"
+    >
+      <input
+        type="text"
+        value={query}
+        onChange={handleInputChange}
+        placeholder="Search for a song..."
+        className="
+      p-3
+      border border-gray-300
+      rounded-lg
+      w-96
+      text-lg
+      text-gray-700
+      shadow-lg
+      focus:outline-none focus:ring-2 focus:ring-indigo-500
+      transition-all duration-300
+      hover:shadow-xl
+      placeholder-gray-400
+      focus:border-indigo-500
+      bg-blue-100
+    "
+      />
+    </Paper>
   )
 }

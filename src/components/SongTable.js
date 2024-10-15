@@ -39,15 +39,24 @@ export default function SongTable({ songList }) {
     setRows(tempRows)
   }, [songList])
   return (
-    <Paper sx={{ height: '100%', width: '100%' }}>
-      <DataGrid
-        rows={rows}
-        columns={columns}
-        initialState={{ pagination: { paginationModel } }}
-        pageSizeOptions={[5, 10]}
-        checkboxSelection
-        sx={{ border: 0 }}
-      />
-    </Paper>
+    <div className="flex">
+      {songList.length > 0 ? (
+        <div>
+          <Paper
+            className="bg-green-100"
+            sx={{ height: '100%', width: '100%' }}
+          >
+            <DataGrid
+              rows={rows}
+              columns={columns}
+              initialState={{ pagination: { paginationModel } }}
+              pageSizeOptions={[5, 10]}
+              checkboxSelection
+              sx={{ border: 0 }}
+            />
+          </Paper>
+        </div>
+      ) : null}
+    </div>
   )
 }
