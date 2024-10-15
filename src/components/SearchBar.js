@@ -2,17 +2,17 @@
 
 import { useEffect, useState } from 'react'
 import { searchSpotifySongs } from '@/lib/logic'
-import Song from './Song'
-
+import SongCard from './SongCard'
 export default function SearchBar() {
   const [query, setQuery] = useState('')
   const [searchResults, setSearchResults] = useState([])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    const temp = await searchSpotifySongs(query)
-    setSearchResults(temp)
-    console.log('temp: ', temp)
+    console.log('SearchResults: ', searchResults)
+    // const temp = await searchSpotifySongs(query)
+    // setSearchResults(temp)
+    // console.log('temp: ', temp)
   }
 
   const handleInputChange = (e) => {
@@ -58,11 +58,7 @@ export default function SearchBar() {
       <div className="mt-8">
         {searchResults.map((result) => (
           <div key={result.id}>
-            <Song song={result} />
-            <p>Song: {result.name}</p>
-            <p>Artist: {result.artists[0].name}</p>
-            <p>Album: {result.album.name}</p>
-            <p>Year: {new Date(result.album.release_date).getFullYear()}</p>
+            <SongCard song={result} />
           </div>
         ))}
       </div>
