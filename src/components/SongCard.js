@@ -6,6 +6,7 @@ import Song from './Song'
 import { useCallback } from 'react'
 
 const SongCard = ({ song, setSongList }) => {
+  const [isOpen, setIsOpen] = useState(false)
   const [open, setOpen] = useState(false)
   const handleOpen = () => setOpen(true)
   const handleClose = useCallback(() => {
@@ -13,6 +14,9 @@ const SongCard = ({ song, setSongList }) => {
     setOpen(false)
   }, [setOpen])
   const handleButton = () => {
+    if (open) {
+      return
+    }
     handleOpen()
   }
 
@@ -23,32 +27,40 @@ const SongCard = ({ song, setSongList }) => {
   return (
     <Card
       onClick={handleButton}
-      className="w-fullrelative bg-white shadow-lg rounded-lg transform transition-transform duration-1000 ease-in-out hover:scale-110 hover:shadow-2xl flex cursor-pointer group border-4 border-transparent overflow-hidden hover:z-10" // Add hover:z-10
+      className="w-full relative shadow-lg border-green-400 rounded-lg transform transition-transform 
+      duration-1000 ease-in-out hover:scale-110 hover:shadow-2xl flex cursor-pointer 
+      group border-transparent overflow-hidden hover:z-10 bg-green-100  hover:bg-green-400" // Add hover:z-10
       sx={{
-        backgroundColor: 'white',
         borderRadius: '0.75rem',
         width: `100%`,
         display: 'flex',
         position: 'relative',
+        borderWidth: '2px',
+        backgroundColor: 'rgb(220 252 231 / var(--tw-bg-opacity))',
       }}
     >
       <SongModal
         song={song}
         open={open}
+        isOpen={isOpen}
         handleClose={handleClose}
         setSongList={setSongList}
         setOpen={setOpen}
       />
 
-      <div className="flex items-center justify-center">
+      <div className="flex items-center justify-center bg-green-100">
         <button
           onClick={(e) => {
             e.stopPropagation()
             handleOpen()
           }}
-          className="flex items-center justify-center bg-green-500 rounded-l-lg transition-transform duration-300 transform w-12 h-full group-hover:bg-green-400" // Use 'group-hover' for hover
+          className="flex items-center justify-center  rounded-l-lg bg-green-100
+          transition-transform duration-300 transform w-12 h-full group-hover:bg-green-400" // Use 'group-hover' for hover
         >
-          <AddIcon fontSize="large" className="text-white" />
+          <AddIcon
+            fontSize="large"
+            className="text-green-500 group-hover:text-white"
+          />
         </button>
       </div>
 

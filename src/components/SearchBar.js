@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { searchSpotifySongs } from '@/lib/logic'
 import SongCard from './SongCard'
 import SongTable from './SongTable'
+import BasicModal from './ModalTest'
 export default function SearchBar() {
   const [query, setQuery] = useState('')
   const [searchResults, setSearchResults] = useState([])
@@ -30,17 +31,24 @@ export default function SearchBar() {
   }, [query])
   return (
     <div className="w-full h-lvh p-4 flex flex-col justify-around">
-      {searchResults.length > 0 ? (
-        <div className="mt-8 flex flex-col items-center">
-          {searchResults.map((result) => (
-            <div className="w-[75%] p-1" key={result.id}>
-              <SongCard song={result} setSongList={setSongList} />
-            </div>
-          ))}
-        </div>
-      ) : null}
-      {songList.length > 0 ? <SongTable songList={songList} /> : null}
-      <form className="w-full flex flex-col items-center">
+      <div className="flex">
+        {searchResults.length > 0 ? (
+          <div className="mt-8 flex flex-col items-center h-[e]">
+            {searchResults.map((result) => (
+              <div className="w-[75%] p-1" key={result.id}>
+                <SongCard song={result} setSongList={setSongList} />
+              </div>
+            ))}
+          </div>
+        ) : null}
+        {songList.length > 0 ? (
+          <div className="w-[50%]">
+            <SongTable songList={songList} />
+          </div>
+        ) : null}
+      </div>
+
+      <div className="flex justify-center">
         <input
           type="text"
           value={query}
@@ -48,8 +56,9 @@ export default function SearchBar() {
           placeholder="Search for a song..."
           className="p-2 border border-gray-300 rounded-lg shadow-sm w-96"
         />
-      </form>
-      <button onClick={() => console.log('SongList: ', songList)}>Check</button>
+      </div>
+
+      {/* <button onClick={() => console.log('SongList: ', songList)}>Check</button> */}
     </div>
   )
 }

@@ -4,8 +4,16 @@ import { use, useState } from 'react'
 import TagsInput from 'react-tagsinput'
 import 'react-tagsinput/react-tagsinput.css'
 
-const SongModal = ({ open, handleClose, song, setSongList, setOpen }) => {
+const SongModal = ({
+  open,
+  handleClose,
+  song,
+  setSongList,
+  setOpen,
+  isOpen,
+}) => {
   const [tags, setTags] = useState([])
+  const [openModal, setOpenModal] = useState(false)
 
   const handleChange = (tags) => {
     setTags(tags)

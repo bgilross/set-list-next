@@ -7,14 +7,14 @@ const columns = [
   { field: 'title', headerName: 'Title', width: 130 },
   { field: 'artist', headerName: 'Artist', width: 130 },
   { field: 'album', headerName: 'Album', width: 130 },
-  { field: 'year', headerName: 'Year', type: 'number', width: 90 },
+  { field: 'year', headerName: 'Year', type: 'number', widht: 40 },
 
   {
     field: 'tags',
     headerName: 'Tags',
     description: 'This column has a value getter and is not sortable.',
     sortable: false,
-    width: 160,
+    width: 200,
   },
 ]
 
@@ -39,7 +39,7 @@ export default function SongTable({ songList }) {
     setRows(tempRows)
   }, [songList])
   return (
-    <Paper sx={{ height: 400, width: '100%' }}>
+    <Paper sx={{ height: '100%', width: '100%' }}>
       <DataGrid
         rows={rows}
         columns={columns}
