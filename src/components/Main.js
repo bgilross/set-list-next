@@ -8,6 +8,7 @@ import { useState } from 'react'
 const Main = () => {
   const [searchResults, setSearchResults] = useState([])
   const [songList, setSongList] = useState([])
+  const [user, setUser] = useState(null)
 
   return (
     <div className="flex flex-col justify-center items-center h-full bg-blue-100">

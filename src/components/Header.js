@@ -14,6 +14,8 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import WordSpread from './WordSpread'
 import SpreadWord from './SpreadWord'
 import { useState } from 'react'
+import Login from './Login'
+import GoogleLogin from './GoogleLogin'
 
 const Header = ({ user, onLogin }) => {
   const [spreadWord, setSpreadWord] = useState(false)
@@ -41,35 +43,9 @@ const Header = ({ user, onLogin }) => {
             <SpreadWord spreadWord={spreadWord} word={'Set Lister'} />
           </div>
         </Box>
-
+        <GoogleLogin />
+        {/* <Login /> */}
         {/* Right: User Icon / Login */}
-        <Box className="flex items-center space-x-3 mr-16">
-          {user ? (
-            <Avatar
-              alt={user.name}
-              src={user.photoURL}
-              className="w-10 h-10 border-2 border-white"
-            />
-          ) : (
-            <Button
-              //   edge="end"
-              color="inherit"
-              //   size="large"
-              aria-label="login"
-              onClick={onLogin}
-              className="flex items-center space-x-1 rounded-full shadow-md bg-white p-2 hover:bg-green-200 hover:scale-105 transition-all duration-200"
-            >
-              <AccountCircleIcon
-                className="text-blue-600"
-                fontSize="inherit"
-                style={{ fontSize: '3rem' }}
-              />
-              <Typography variant="h5" className="text-blue-600">
-                Login
-              </Typography>
-            </Button>
-          )}
-        </Box>
       </Toolbar>
     </AppBar>
   )
