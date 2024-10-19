@@ -3,7 +3,7 @@ import { CardContent, Typography, CardMedia, Box } from '@mui/material'
 
 const Song = ({ song }) => {
   return (
-    <Box className="flex items-center">
+    <Box className="flex items-center bg-green-100 w-full group group-hover:bg-green-400 rounded-r-lg">
       <CardMedia
         component="img"
         image={song.album.images[1].url}
@@ -15,7 +15,7 @@ const Song = ({ song }) => {
           marginRight: 2, // Space between image and text
         }}
       />
-      <CardContent>
+      <CardContent className="rounded-r-lg">
         <Typography
           variant="h5"
           component="div"

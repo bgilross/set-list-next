@@ -15,7 +15,7 @@ import { useState, useEffect, forwardRef } from 'react'
 import { auth } from '../lib/firebaseConfig'
 import { onAuthStateChanged } from 'firebase/auth'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
-import { useAuth } from '@/lib/AuthContext'
+import { useAuth } from '../lib/AuthContext'
 
 const Transition = forwardRef(function Transition(props, ref) {
   return <Slide direction="down" ref={ref} {...props} />
@@ -50,6 +50,7 @@ const GoogleLogin = ({ hover }) => {
   const handleLogout = async () => {
     try {
       await logout()
+      setMenuOpen(false)
       alert('Successfully logged out!')
     } catch (error) {
       alert(error.message)
