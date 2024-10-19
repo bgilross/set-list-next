@@ -32,15 +32,6 @@ const TableDisplay = ({ songList }) => {
       alert(`Error: ${result.error.message}`)
     }
   }
-  const datExample = [
-    {
-      name: 'Song Name',
-      artist: 'Artist Name',
-      album: 'Album Name',
-      year: 'Year',
-      tags: ['tag1', 'tag2', 'tag3'],
-    },
-  ]
 
   const config = [
     {

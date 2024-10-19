@@ -1,5 +1,73 @@
 import { db } from './firebaseConfig'
-import { doc, setDoc, getDoc, updateDoc, collection } from 'firebase/firestore'
+import {
+  doc,
+  setDoc,
+  getDoc,
+  getDocs,
+  updateDoc,
+  collection,
+  writeBatch,
+  deleteDoc,
+} from 'firebase/firestore'
+
+export const deleteSetlist = async (userId, setlistId) => {
+  try {
+    const setlistRef = doc(db, 'users', userId, 'setlists', setlistId)
+    await deleteDoc(setlistRef) // Delete the document
+    console.log(`Setlist ${setlistId} deleted successfully.`)
+    return { success: true }
+  } catch (error) {
+    console.error('Error deleting setlist:', error)
+    return { success: false, error }
+  }
+}
+
+export const updateUserSongs = async (userId, songs) => {
+  const batch = writeBatch(db)
+
+  // Loop through each song to check if it exists and update accordingly
+  for (const song of songs) {
+    const {
+      id: spotifyId,
+      name: songName,
+      userTags = [],
+      notes = '',
+      dateCreated = new Date(),
+    } = song
+    const songRef = doc(db, `users/${userId}/songs/${spotifyId}`)
+
+    const songSnap = await getDoc(songRef)
+
+    if (songSnap.exists()) {
+      // If the song already exists, merge tags and update `lastEdited`
+      // const existingTags = songSnap.data().tags || []
+      // const mergedTags = Array.from(new Set([...existingTags, ...tags])) // Remove duplicates
+
+      batch.update(songRef, {
+        name: songName,
+        tags: userTags,
+        notes: notes || songSnap.data().notes, // Keep existing notes if new notes are empty
+        lastEdited: new Date().toISOString(),
+      })
+    } else {
+      // If the song doesn't exist, create a new document with initial data
+      batch.set(songRef, {
+        tags,
+        notes,
+        dateCreated: new Date().toISOString(),
+        lastEdited: new Date().toISOString(),
+      })
+    }
+  }
+
+  // Commit the batch operation
+  try {
+    await batch.commit()
+    console.log('User songs successfully updated!')
+  } catch (error) {
+    console.error('Error updating user songs:', error)
+  }
+}
 
 export const saveSetlist = async (userId, songList, setlistId, setlistName) => {
   console.log(
@@ -9,13 +77,18 @@ export const saveSetlist = async (userId, songList, setlistId, setlistName) => {
     setlistId,
     setlistName
   )
+  const songs = songList.map((song) => ({
+    spotifyId: song.id,
+    dateAdded: new Date().toISOString(),
+  }))
+
   const setlistRef = setlistId
     ? doc(db, 'users', userId, 'setlists', setlistId)
     : doc(collection(db, 'users', userId, 'setlists'))
 
   const setlistData = {
     name: setlistName || 'Untitled Setlist', // Fallback to prevent undefined values
-    songs: songList.length ? songList : [], // Ensure songs is always an array
+    songs: songs.length ? songs : [], // Ensure songs is always an array
   }
 
   if (setlistId) {
@@ -24,12 +97,39 @@ export const saveSetlist = async (userId, songList, setlistId, setlistName) => {
     setlistData.dateCreated = new Date().toISOString()
   }
   try {
+    await updateUserSongs(userId, songList)
     await setDoc(setlistRef, setlistData, { merge: true })
     console.log('Setlist saved successfully')
     return { success: true }
   } catch (error) {
     console.error('Error saving setlist:', error)
     return { success: false, error }
+  }
+}
+export const getSetlists = async (userId) => {
+  const setlistsRef = collection(db, 'users', userId, 'setlists')
+
+  try {
+    const querySnapshot = await getDocs(setlistsRef)
+    const setlists = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }))
+    // console.log('Query snapshot:', querySnapshot)
+    // console.log('query snapshot docs: ', querySnapshot.docs)
+    // console.log('Setlists:', setlists)
+    // console.log('id? : ', setlists[0].id)
+    return { success: true, data: setlists }
+  } catch (error) {
+    console.error('Error retrieving setlists:', error)
+    return { success: false, error }
+  }
+}
+
+export const getSetlistsData = async (userId) => {
+  const { success, error, data } = await getSetlists(userId)
+  let setlistsData = []
+  if (success) {
   }
 }
 

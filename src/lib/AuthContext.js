@@ -4,36 +4,60 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { auth, db, googleProvider } from './firebaseConfig'
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'
 import { setDoc, doc, getDoc } from 'firebase/firestore'
+import { getSetlists } from './dbService'
 
 const AuthContext = createContext()
 
-export const useAuth = () => {
-  return useContext(AuthContext)
-}
+export const useAuth = () => useContext(AuthContext)
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true) // Track loading state
+  const [setlists, setSetlists] = useState([])
+  const [userSongs, setUserSongs] = useState([])
 
+  // Listen to Auth state changes and set the user
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        setUser(user)
+        setUser(user) // Set the user if authenticated
       } else {
         setUser(null)
       }
+      setLoading(false) // Loading complete
     })
 
     return () => unsubscribe()
   }, [])
+
+  // Fetch setlists when the user state changes
+  useEffect(() => {
+    const getData = async () => {
+      if (!user) return // Ensure user exists before fetching data
+
+      try {
+        const temp = await getSetlists(user.uid)
+        setSetlists(temp.data)
+        console.log('Setlists:', temp.data)
+      } catch (error) {
+        console.error('Error fetching setlists:', error)
+      }
+    }
+
+    if (!loading && user) {
+      getData() // Only fetch setlists if loading is complete and user exists
+    }
+  }, [user, loading])
 
   const signInWithGoogle = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider)
       setUser(result.user)
 
-      //check/create user in firestore
+      // Check or create user in Firestore
       const userRef = doc(db, 'users', result.user.uid)
       const userSnap = await getDoc(userRef)
+
       if (!userSnap.exists()) {
         const userData = {
           displayName: result.user.displayName,
@@ -42,13 +66,11 @@ export const AuthProvider = ({ children }) => {
           userId: result.user.uid,
         }
         await setDoc(userRef, userData)
-        console.log(
-          'User document created successfully for : ',
-          result.user.uid
-        )
+        console.log('User document created successfully:', result.user.uid)
       } else {
-        console.log('User document already exists for : ', result.user.uid)
+        console.log('User document already exists:', result.user.uid)
       }
+
       return result.user
     } catch (error) {
       throw new Error(error.message)
@@ -65,7 +87,9 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, signInWithGoogle, logout }}>
+    <AuthContext.Provider
+      value={{ user, setlists, signInWithGoogle, logout, loading }}
+    >
       {children}
     </AuthContext.Provider>
   )

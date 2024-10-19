@@ -4,21 +4,29 @@ import SearchBar from './SearchBar'
 import SearchResults from './SearchResults'
 import { useState } from 'react'
 import TableDisplay from './TableDisplay'
+import { Button } from '@mui/material'
+import { useAuth } from '@/lib/AuthContext'
+import { getSetlists } from '@/lib/dbService'
+import SetlistDisplay from './SetlistDisplay'
 
 const Main = () => {
   const [searchResults, setSearchResults] = useState([])
   const [songList, setSongList] = useState([])
-  const [user, setUser] = useState(null)
+
+  const { user, setlists, userSongs } = useAuth()
+
+  const handleClick = () => {
+    console.log('user:', user)
+    console.log('songList:', songList)
+    console.log('searchResults:', searchResults)
+    console.log('attempting to get setlist data...')
+    getSetlists(user.uid)
+  }
 
   return (
     <div className="flex flex-col justify-center items-center h-full bg-blue-100">
-      <button
-        onClick={() => {
-          console.log(songList)
-        }}
-      >
-        CHECK
-      </button>
+      <SetlistDisplay setlists={setlists} />
+      <Button onClick={handleClick}>CHECK</Button>
       <SearchBar setSearchResults={setSearchResults} />
       <SearchResults searchResults={searchResults} setSongList={setSongList} />
       <TableDisplay songList={songList} />

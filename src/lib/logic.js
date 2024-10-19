@@ -67,3 +67,22 @@ export async function searchSpotifySongs(query) {
     throw new Error('Unable to search Spotify songs')
   }
 }
+
+export async function getSongsByIds(songIds) {
+  const token = await getToken() // Retrieve a valid token
+
+  try {
+    const result = await axios.get(
+      `https://api.spotify.com/v1/tracks?ids=${songIds}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+    return result.data.tracks
+  } catch (error) {
+    console.error('Error searching Spotify songs:', error)
+    throw new Error('Unable to search Spotify songs')
+  }
+}
