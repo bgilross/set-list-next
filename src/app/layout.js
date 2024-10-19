@@ -2,6 +2,7 @@ import localFont from 'next/font/local'
 import './globals.css'
 import Header from '@/components/Header'
 import { AuthProvider } from '@/lib/AuthContext'
+import Footer from '@/components/Footer'
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -23,10 +24,15 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-blue-100`}
+        className={`layoutBody ${geistSans.variable} ${geistMono.variable} antialiased bg-blue-100 h-screen flex flex-col`}
       >
-        <Header />
-        {children}
+        <div className="flex flex-col justify-between h-full">
+          <AuthProvider>
+            <Header />
+            {children}
+          </AuthProvider>
+          <Footer />
+        </div>
       </body>
     </html>
   )

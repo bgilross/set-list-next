@@ -1,3 +1,5 @@
+//Spotify API Logic
+
 import axios from 'axios'
 
 const client_id = '4a25bc2ba5d942ceac4b96d09a9145a5'

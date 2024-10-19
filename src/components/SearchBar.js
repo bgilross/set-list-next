@@ -29,7 +29,7 @@ export default function SearchBar({ setSearchResults, searchResults }) {
   return (
     <Paper
       elevation={7}
-      className="flex justify-center m-8 w-[90%] p-8 bg-green-100 rounded-3xl group hover:scale-105 transition-all ease-in-out duration-700"
+      className="flex justify-center m-8 w-[90%] p-8 bg-blue-500 rounded-3xl group hover:scale-105 transition-all ease-in-out duration-700"
     >
       <input
         type="text"
@@ -52,7 +52,7 @@ export default function SearchBar({ setSearchResults, searchResults }) {
       group-hover:shadow-xl
       placeholder-gray-400
       focus:border-indigo-500
-      bg-blue-100
+      bg-green-100
     "
       />
     </Paper>

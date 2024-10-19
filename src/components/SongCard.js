@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Card, CardContent, CardMedia, Box } from '@mui/material'
+import { Card } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import SongModal from './SongModal'
 import Song from './Song'
@@ -27,8 +27,8 @@ const SongCard = ({ song, setSongList }) => {
   return (
     <Card
       onClick={handleButton}
-      className="w-full relative shadow-lg border-green-400 rounded-lg transform transition-all
-      duration-700 ease-in-out hover:scale-105 hover:shadow-2xl flex cursor-pointer 
+      className="flex-1 h-full w-full relative shadow-lg border-green-400 rounded-lg transform transition-all
+      duration-500 ease-in-out hover:scale-105 hover:shadow-2xl flex cursor-pointer 
       group border-transparent overflow-hidden hover:z-10 bg-green-100  hover:bg-green-400" // Add hover:z-10
       sx={{
         borderRadius: '0.75rem',
