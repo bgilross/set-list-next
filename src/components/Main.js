@@ -21,6 +21,7 @@ const Main = () => {
     console.log('searchResults:', searchResults)
     console.log('attempting to get setlist data...')
     getSetlists(user.uid)
+    console.log('userSongs  :', userSongs)
   }
 
   return (

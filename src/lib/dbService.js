@@ -115,6 +115,24 @@ export const saveSetlist = async (userId, songList, setlistId, setlistName) => {
     return { success: false, error }
   }
 }
+
+export const getUserSongs = async (userId) => {
+  console.log('Running getUserSongs: userId: ', userId)
+  const songsRef = collection(db, 'users', userId, 'songs')
+
+  try {
+    const querySnapshot = await getDocs(songsRef)
+    const songs = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }))
+    console.log('Songs:', songs)
+    return { success: true, data: songs }
+  } catch (error) {
+    console.error('Error retrieving songs:', error)
+    return { success: false, error }
+  }
+}
 export const getSetlists = async (userId) => {
   console.log('Running getSetlists: userId: ', userId)
   console.log('db: ', db)

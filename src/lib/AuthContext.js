@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { auth, db, googleProvider } from './firebaseConfig'
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'
 import { setDoc, doc, getDoc } from 'firebase/firestore'
-import { getSetlists } from './dbService'
+import { getSetlists, getUserSongs } from './dbService'
 
 const AuthContext = createContext()
 
@@ -38,6 +38,10 @@ export const AuthProvider = ({ children }) => {
       try {
         const tempSetlists = await getSetlists(user.uid)
         setSetlists(tempSetlists.data)
+        console.log('getting user Songs: user.uid: ', user.uid)
+        const tempSongs = await getUserSongs(user.uid)
+        console.log('tempSongs: ', tempSongs.data)
+        setUserSongs(tempSongs.data)
         console.log('Setlists:', tempSetlists.data)
       } catch (error) {
         console.error('Error fetching setlists:', error)
@@ -88,7 +92,15 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, setlists, signInWithGoogle, logout, loading, setSetlists }}
+      value={{
+        user,
+        setlists,
+        signInWithGoogle,
+        logout,
+        loading,
+        setSetlists,
+        userSongs,
+      }}
     >
       {children}
     </AuthContext.Provider>
