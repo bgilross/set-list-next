@@ -11,6 +11,9 @@ import {
 } from 'firebase/firestore'
 
 export const deleteSetlist = async (userId, setlistId) => {
+  console.log('Deleting setlist:', setlistId)
+  console.log('userId:', userId)
+
   try {
     const setlistRef = doc(db, 'users', userId, 'setlists', setlistId)
     await deleteDoc(setlistRef) // Delete the document
@@ -52,7 +55,9 @@ export const updateUserSongs = async (userId, songs) => {
     } else {
       // If the song doesn't exist, create a new document with initial data
       batch.set(songRef, {
-        tags,
+        name: songName,
+        id: spotifyId,
+        userTags,
         notes,
         dateCreated: new Date().toISOString(),
         lastEdited: new Date().toISOString(),
@@ -80,6 +85,10 @@ export const saveSetlist = async (userId, songList, setlistId, setlistName) => {
   const songs = songList.map((song) => ({
     spotifyId: song.id,
     dateAdded: new Date().toISOString(),
+    name: song.name,
+    artist: song.artists[0].name,
+    album: song.album.name,
+    year: song.album.release_date.slice(0, 4),
   }))
 
   const setlistRef = setlistId
@@ -107,6 +116,8 @@ export const saveSetlist = async (userId, songList, setlistId, setlistName) => {
   }
 }
 export const getSetlists = async (userId) => {
+  console.log('Running getSetlists: userId: ', userId)
+  console.log('db: ', db)
   const setlistsRef = collection(db, 'users', userId, 'setlists')
 
   try {
@@ -123,13 +134,6 @@ export const getSetlists = async (userId) => {
   } catch (error) {
     console.error('Error retrieving setlists:', error)
     return { success: false, error }
-  }
-}
-
-export const getSetlistsData = async (userId) => {
-  const { success, error, data } = await getSetlists(userId)
-  let setlistsData = []
-  if (success) {
   }
 }
 

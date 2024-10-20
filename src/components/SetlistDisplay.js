@@ -1,30 +1,18 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { getSetlists, deleteSetlist } from '../lib/dbService' // Import functions
-
-const SetlistView = ({ userId }) => {
-  const [setlists, setSetlists] = useState([])
+import { deleteSetlist } from '../lib/dbService' // Import functions
+import { useAuth } from '@/lib/AuthContext'
+import SetlistPreview from './SetlistPreview'
+import { Paper } from '@mui/material'
+import { getSongsByIds } from '@/lib/logic'
+const SetlistDisplay = ({ userId, setSongList }) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const { setlists, setSetlists } = useAuth()
 
-  // Fetch setlists on component mount
-  useEffect(() => {
-    const fetchSetlists = async () => {
-      const result = await getSetlists(userId)
-      if (result.success) {
-        setSetlists(result.data) // Store setlists in state
-      } else {
-        setError(result.error) // Handle error
-      }
-      setLoading(false)
-    }
-
-    fetchSetlists()
-  }, [userId])
-
-  // Handle delete action
   const handleDelete = async (setlistId) => {
+    console.log('Deleting setlist:', setlistId)
     const result = await deleteSetlist(userId, setlistId)
     if (result.success) {
       // Remove the deleted setlist from the local state
@@ -34,9 +22,14 @@ const SetlistView = ({ userId }) => {
     }
   }
 
-  if (loading) return <div>Loading setlists...</div>
+  const handleSelectSetlist = async (setlist) => {
+    const songIds = setlist.songs.map((song) => song.spotifyId)
+    const songs = await getSongsByIds(songIds)
+    setSongList(songs)
+  }
+  if (!setlists || setlists.length < 1) return <div>Loading setlists...</div>
   if (error) return <div>Error loading setlists: {error.message}</div>
-
+  if (!userId) return <div>userId not found</div>
   return (
     <div>
       <h1>Your Setlists</h1>
@@ -46,9 +39,12 @@ const SetlistView = ({ userId }) => {
         <ul>
           {setlists.map((setlist) => (
             <li key={setlist.id} className="setlist-item">
-              <div>
-                <strong>{setlist.name}</strong>
-                <button onClick={() => handleDelete(setlist.id)}>Delete</button>
+              <div className="flex justify-center items-center">
+                <SetlistPreview
+                  setlist={setlist}
+                  handleDelete={handleDelete}
+                  handleSelectSetlist={handleSelectSetlist}
+                />
               </div>
             </li>
           ))}
@@ -58,4 +54,4 @@ const SetlistView = ({ userId }) => {
   )
 }
 
-export default SetlistView
+export default SetlistDisplay

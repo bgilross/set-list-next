@@ -32,7 +32,7 @@ const SongCard = ({ song, setSongList }) => {
     >
       <Card
         onClick={handleButton}
-        className="flex-1 h-full w-full relative shadow-lg border-green-400 rounded-lg transform transition-all
+        className="flex-1 h-full w-full relative shadow-lg rounded-lg transform transition-transform
         duration-500 ease-in-out hover:scale-105 hover:shadow-2xl flex cursor-pointer
         group border-transparent overflow-hidden hover:z-10  hover:bg-green-400 p-1" // Add hover:z-10
         sx={{

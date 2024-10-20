@@ -25,7 +25,15 @@ const Main = () => {
 
   return (
     <div className="flex flex-col justify-center items-center h-full bg-blue-100">
-      <SetlistDisplay setlists={setlists} />
+      {user?.uid && (
+        <>
+          <SetlistDisplay
+            setlists={setlists}
+            userId={user.uid}
+            setSongList={setSongList}
+          />
+        </>
+      )}
       <Button onClick={handleClick}>CHECK</Button>
       <SearchBar setSearchResults={setSearchResults} />
       <SearchResults searchResults={searchResults} setSongList={setSongList} />

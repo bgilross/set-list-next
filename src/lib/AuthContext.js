@@ -36,9 +36,9 @@ export const AuthProvider = ({ children }) => {
       if (!user) return // Ensure user exists before fetching data
 
       try {
-        const temp = await getSetlists(user.uid)
-        setSetlists(temp.data)
-        console.log('Setlists:', temp.data)
+        const tempSetlists = await getSetlists(user.uid)
+        setSetlists(tempSetlists.data)
+        console.log('Setlists:', tempSetlists.data)
       } catch (error) {
         console.error('Error fetching setlists:', error)
       }
@@ -88,7 +88,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, setlists, signInWithGoogle, logout, loading }}
+      value={{ user, setlists, signInWithGoogle, logout, loading, setSetlists }}
     >
       {children}
     </AuthContext.Provider>

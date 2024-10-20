@@ -10,9 +10,6 @@ const TableDisplay = ({ songList }) => {
   const [setlistName, setSetlistName] = useState('')
   const { user } = useAuth()
 
-  const getSetlistData = () => {
-    saveSetlist(user.uid, songList, null, setlistName)
-  }
   const handleSaveSetlist = async () => {
     if (!setlistName) {
       alert('Please provide a setlist name.')
@@ -31,6 +28,8 @@ const TableDisplay = ({ songList }) => {
     } else {
       alert(`Error: ${result.error.message}`)
     }
+
+    console.log('finishing saveSetlist, updating setlist State')
   }
 
   const config = [
@@ -58,7 +57,7 @@ const TableDisplay = ({ songList }) => {
       label: 'Tags',
       render: (item) => (
         <div className="flex flex-wrap gap-2">
-          {item.userTags.map((tag, index) => (
+          {item.userTags?.map((tag, index) => (
             <span key={index} className="bg-gray-200 text-sm px-2 py-1 rounded">
               {tag}
             </span>
@@ -71,7 +70,9 @@ const TableDisplay = ({ songList }) => {
   const keyFn = (item) => {
     return item.name
   }
-
+  if (!songList || songList.length === 0) {
+    return null
+  }
   return (
     <div className="w-full flex flex-col justify-center items-center">
       <Paper elevation={3} className="m-4 w-[60%] rounded-lg">
