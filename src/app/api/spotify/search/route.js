@@ -8,6 +8,9 @@ const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET
 
 const IS_PROD = process.env.NODE_ENV === "production"
 
+// Ensure this route isn't statically optimized so env updates + auth cookie are always fresh
+export const dynamic = "force-dynamic"
+
 function debugPayload(extra) {
 	if (IS_PROD) return undefined
 	return {
@@ -58,11 +61,23 @@ export async function GET(request) {
 	const q = searchParams.get("q")
 	const type = searchParams.get("type") || "track"
 	const limit = searchParams.get("limit") || "6"
+
+	const errorResponse = (code, payload = {}) =>
+		Response.json(
+			{
+				error: code,
+				...(!IS_PROD
+					? { debug: debugPayload({ reason: code, ...payload }) }
+					: {}),
+			},
+			{ status: 500, headers: { "X-Spotify-Error-Code": code } }
+		)
+
 	if (!q || q.length < 2) {
-		return Response.json({
-			items: [],
-			debug: debugPayload({ reason: "short_query" }),
-		})
+		return Response.json(
+			{ items: [], debug: debugPayload({ reason: "short_query" }) },
+			{ headers: { "X-Spotify-Status": "short_query" } }
+		)
 	}
 
 	const cookieVal = cookies().get("spotify_session")?.value
@@ -80,21 +95,12 @@ export async function GET(request) {
 	if (!authHeader) {
 		if (!CLIENT_ID || !CLIENT_SECRET) {
 			if (!IS_PROD) console.error("[spotify][search] missing env vars")
-			return Response.json(
-				{
-					error: "server_not_configured",
-					debug: debugPayload({ reason: "missing_env" }),
-				},
-				{ status: 500 }
-			)
+			return errorResponse("server_not_configured", { reason: "missing_env" })
 		}
 		try {
 			authHeader = "Bearer " + (await getClientCredentialsToken())
 		} catch (e) {
-			return Response.json(
-				{ error: "token_error", debug: debugPayload({ reason: e.message }) },
-				{ status: 500 }
-			)
+			return errorResponse("token_error", { reason: e.message })
 		}
 	}
 
@@ -108,33 +114,21 @@ export async function GET(request) {
 		res = await fetch(url, { headers: { Authorization: authHeader } })
 	} catch (e) {
 		if (!IS_PROD) console.error("[spotify][search] network error", e)
-		return Response.json(
-			{
-				error: "network_error",
-				debug: debugPayload({ reason: "network", detail: e.message }),
-			},
-			{ status: 500 }
-		)
+		return errorResponse("network_error", { detail: e.message })
 	}
 	if (!res.ok) {
 		const text = !IS_PROD ? await res.text().catch(() => "") : undefined
 		if (!IS_PROD) console.error("[spotify][search] non-ok", res.status, text)
-		return Response.json(
-			{
-				error: "search_failed",
-				debug: debugPayload({ status: res.status, body: text?.slice(0, 400) }),
-			},
-			{ status: 500 }
-		)
+		return errorResponse("search_failed", {
+			status: res.status,
+			body: text?.slice(0, 400),
+		})
 	}
 	let data
 	try {
 		data = await res.json()
 	} catch (e) {
-		return Response.json(
-			{ error: "bad_json", debug: debugPayload({ reason: e.message }) },
-			{ status: 500 }
-		)
+		return errorResponse("bad_json", { reason: e.message })
 	}
 	if (!IS_PROD) data.debug = debugPayload({ reason: "ok" })
 	return Response.json(data)
