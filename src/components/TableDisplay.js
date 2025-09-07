@@ -120,8 +120,10 @@ const TableDisplay = ({ songList, activeSetlist, clearActive }) => {
 					data={songList}
 					config={config}
 					keyFn={keyFn}
-					headerRowClassName="bg-blue-500 text-green-200"
+					headerRowClassName="bg-blue-600 text-green-50"
 					tableClassName="bg-green-100"
+					sortedHeadersClassName="cursor-pointer select-none hover:bg-blue-500/80 transition-colors"
+					iconClassName="mr-1 text-green-100"
 					rowsClassName="p-2"
 					className="w-full rounded-lg"
 				/>
