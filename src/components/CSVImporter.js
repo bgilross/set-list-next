@@ -43,9 +43,11 @@ const CSVImporter = ({ onAddSongs, className = "" }) => {
 	const fileInputRef = useRef(null)
 	const { push } = useToast()
 	const [parsing, setParsing] = useState(false)
+	const [fileName, setFileName] = useState("")
 
 	const handleFile = (file) => {
 		if (!file) return
+		setFileName(file.name)
 		setParsing(true)
 		Papa.parse(file, {
 			header: true,
@@ -76,6 +78,7 @@ const CSVImporter = ({ onAddSongs, className = "" }) => {
 				onAddSongs(songs)
 				push(`Imported ${songs.length} songs from CSV`, { type: "success" })
 				if (fileInputRef.current) fileInputRef.current.value = ""
+				setFileName("")
 			},
 			error: (err) => {
 				setParsing(false)
@@ -99,7 +102,8 @@ const CSVImporter = ({ onAddSongs, className = "" }) => {
 					type="file"
 					accept=".csv,text/csv"
 					onChange={(e) => handleFile(e.target.files?.[0])}
-					className="text-sm"
+					className="hidden"
+					aria-hidden="true"
 					disabled={parsing}
 				/>
 				<Button
@@ -111,6 +115,11 @@ const CSVImporter = ({ onAddSongs, className = "" }) => {
 				>
 					{parsing ? "Parsing..." : "Select CSV"}
 				</Button>
+				{fileName && (
+					<span className="text-xs text-blue-700 truncate max-w-[180px]" title={fileName}>
+						{fileName}
+					</span>
+				)}
 			</div>
 		</div>
 	)

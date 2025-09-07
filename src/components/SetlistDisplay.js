@@ -58,9 +58,26 @@ const SetlistDisplay = ({ userId, setSongList, onSelectSetlist, onCreate }) => {
 	return (
 		<div className="w-full flex flex-col gap-3 py-4">
 			<div className="flex flex-wrap items-center justify-between gap-3 px-6">
-				<div>
-					<h2 className="text-2xl font-bold text-blue-700">Your Setlists</h2>
-					<p className="text-[12px] text-blue-600/70 tracking-wide">
+				<div
+					role="button"
+					aria-expanded={!collapsed}
+					aria-controls="setlist-grid"
+					abIndex={0}
+					onClick={() => {
+						if (processed.length > 0) setCollapsed((c) => !c)
+					}}
+					onKeyDown={(e) => {
+						if ((e.key === "Enter" || e.key === " ") && processed.length > 0) {
+							setCollapsed((c) => !c)
+						}
+					}}
+					className="group cursor-pointer select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded-md px-1 py-1 transition-colors hover:bg-blue-100/60 active:bg-blue-200"
+					title={processed.length > 0 ? (collapsed ? "Click to expand your setlists" : "Click to collapse your setlists") : undefined}
+				>
+					<h2 className="text-2xl font-bold text-blue-700 transition-colors group-hover:text-blue-800 group-active:text-blue-900">
+						Your Setlists
+					</h2>
+					<p className="text-[12px] text-blue-600/70 tracking-wide group-hover:text-blue-700">
 						{processed.length} setlist{processed.length !== 1 && "s"}
 					</p>
 				</div>
@@ -94,7 +111,7 @@ const SetlistDisplay = ({ userId, setSongList, onSelectSetlist, onCreate }) => {
 					</button>
 				</div>
 			) : !collapsed ? (
-				<ul className="grid gap-6 px-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+				<ul id="setlist-grid" className="grid gap-6 px-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
 					{processed.map((setlist) => (
 						<li key={setlist.id}>
 							<SetlistPreview
