@@ -5,12 +5,27 @@
 
 export async function searchSpotifySongs(query) {
 	if (!query) return []
-	const res = await fetch(
-		`/api/spotify/search?` +
-			new URLSearchParams({ q: query, type: "track", limit: "6" })
-	)
-	if (!res.ok) return []
-	const data = await res.json()
+	let res
+	try {
+		res = await fetch(
+			`/api/spotify/search?` +
+				new URLSearchParams({ q: query, type: "track", limit: "6" })
+		)
+	} catch (e) {
+		console.warn("spotify search network error", e)
+		return []
+	}
+	let data
+	try {
+		data = await res.json()
+	} catch (e) {
+		console.warn("spotify search bad json", e)
+		return []
+	}
+	if (!res.ok || data?.error) {
+		console.warn("spotify search api error", data)
+		return []
+	}
 	return data?.tracks?.items || []
 }
 
