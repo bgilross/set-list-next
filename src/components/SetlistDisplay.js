@@ -5,8 +5,8 @@ import { deleteSetlist } from "../lib/dbService" // Import functions
 import { useAuth } from "@/lib/AuthContext"
 import SetlistPreview from "./SetlistPreview"
 import { getSongsByIds } from "@/lib/logic"
-const SetlistDisplay = ({ userId, setSongList, onSelectSetlist }) => {
-	const [filter, setFilter] = useState("")
+const SetlistDisplay = ({ userId, setSongList, onSelectSetlist, onCreate }) => {
+	const [collapsed, setCollapsed] = useState(true)
 	const { setlists, setSetlists, userSongs } = useAuth()
 	// Removed interactive sorting; default ordering will be Updated DESC only.
 
@@ -41,16 +41,14 @@ const SetlistDisplay = ({ userId, setSongList, onSelectSetlist }) => {
 
 	const processed = useMemo(() => {
 		if (!Array.isArray(setlists)) return []
-		const f = filter.trim().toLowerCase()
 		return setlists
-			.filter((s) => !f || s.name?.toLowerCase().includes(f))
 			.slice()
 			.sort(
 				(a, b) =>
 					new Date(b.lastUpdated || b.dateCreated || 0) -
 					new Date(a.lastUpdated || a.dateCreated || 0)
 			)
-	}, [setlists, filter])
+	}, [setlists])
 
 	if (!userId)
 		return <div className="text-sm text-red-600">User not found.</div>
@@ -58,32 +56,44 @@ const SetlistDisplay = ({ userId, setSongList, onSelectSetlist }) => {
 		return <div className="text-sm text-gray-500">Loading setlists...</div>
 
 	return (
-		<div className="w-full flex flex-col gap-4 py-4">
-			<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-6">
-				<div className="flex flex-col gap-1">
+		<div className="w-full flex flex-col gap-3 py-4">
+			<div className="flex flex-wrap items-center justify-between gap-3 px-6">
+				<div>
 					<h2 className="text-2xl font-bold text-blue-700">Your Setlists</h2>
-					<div className="text-[11px] text-blue-600/70 tracking-wide">
-						{processed.length} result{processed.length !== 1 && "s"}
-					</div>
+					<p className="text-[12px] text-blue-600/70 tracking-wide">
+						{processed.length} setlist{processed.length !== 1 && "s"}
+					</p>
 				</div>
-				<div className="flex flex-col gap-1">
-					<label className="text-[11px] font-semibold uppercase text-blue-600/80">
-						Filter
-					</label>
-					<input
-						value={filter}
-						onChange={(e) => setFilter(e.target.value)}
-						placeholder="Name..."
-						className="px-3 py-2 rounded-lg border border-blue-300 bg-green-50 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
-					/>
+				<div className="flex gap-2">
+					<button
+						onClick={() => onCreate && onCreate()}
+						className="px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white text-sm font-semibold shadow"
+					>
+						Create New Setlist
+					</button>
+					{processed.length > 0 && (
+						<button
+							onClick={() => setCollapsed((c) => !c)}
+							className="px-3 py-2 rounded-lg bg-blue-200 hover:bg-blue-300 text-blue-800 text-xs font-semibold"
+						>
+							{collapsed ? "Show" : "Hide"} List
+						</button>
+					)}
 				</div>
 			</div>
-
 			{processed.length === 0 ? (
-				<div className="mx-6 p-6 rounded-xl border-2 border-dashed border-blue-300 bg-blue-50 text-blue-700 text-sm text-center">
-					No setlists match your filter.
+				<div className="mx-6 p-8 rounded-xl border border-dashed border-blue-300 bg-gradient-to-br from-blue-50 to-green-50 text-blue-700 text-sm text-center flex flex-col gap-4">
+					<p className="text-base font-semibold">
+						You haven&apos;t created any setlists yet.
+					</p>
+					<button
+						onClick={() => onCreate && onCreate()}
+						className="mx-auto px-6 py-3 rounded-full bg-green-600 hover:bg-green-700 text-green-50 font-bold shadow-lg shadow-green-600/30 transition"
+					>
+						Create Your First Setlist
+					</button>
 				</div>
-			) : (
+			) : !collapsed ? (
 				<ul className="grid gap-6 px-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
 					{processed.map((setlist) => (
 						<li key={setlist.id}>
@@ -95,7 +105,7 @@ const SetlistDisplay = ({ userId, setSongList, onSelectSetlist }) => {
 						</li>
 					))}
 				</ul>
-			)}
+			) : null}
 		</div>
 	)
 }

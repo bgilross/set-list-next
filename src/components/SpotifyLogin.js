@@ -49,10 +49,13 @@ const SpotifyLogin = ({ onLinked }) => {
 	if (session) {
 		return (
 			<div className="flex items-center gap-2">
-				<span className="text-green-200 text-sm">Spotify Linked</span>
+				<div className="flex items-center gap-1 px-3 py-1 rounded-full bg-green-600/30 border border-green-400/40 text-green-200 text-xs font-medium">
+					<span className="inline-block w-2 h-2 rounded-full bg-green-300 animate-pulse" />
+					Linked
+				</div>
 				<button
 					onClick={logoutSpotify}
-					className="text-red-200 text-xs underline"
+					className="text-[10px] text-red-200/80 hover:text-red-100 underline"
 				>
 					Unlink
 				</button>
