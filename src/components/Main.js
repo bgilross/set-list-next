@@ -60,6 +60,7 @@ export default function Main() {
 			{activeSetlist && !createModalOpen && (
 				<TableDisplay
 					songList={songList}
+					setSongList={setSongList}
 					activeSetlist={activeSetlist}
 					clearActive={() => setActiveSetlist(null)}
 				/>

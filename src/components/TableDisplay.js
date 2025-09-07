@@ -4,11 +4,17 @@ import { useState, useEffect } from "react"
 import { Button } from "@mui/material"
 import Input from "./TextInput"
 import { saveSetlist } from "@/lib/dbService"
+import ReplaceSongModal from "./modals/ReplaceSongModal"
 import { useAuth } from "@/lib/AuthContext"
 import { useToast } from "@/lib/ToastContext"
 import TagInput from "./TagInput"
 
-const TableDisplay = ({ songList, activeSetlist, clearActive }) => {
+const TableDisplay = ({
+	songList,
+	setSongList,
+	activeSetlist,
+	clearActive,
+}) => {
 	const [setlistName, setSetlistName] = useState("")
 	const { user, userSongs } = useAuth()
 	const { push } = useToast()
@@ -69,10 +75,33 @@ const TableDisplay = ({ songList, activeSetlist, clearActive }) => {
 		}
 	}
 
+	const openReplace = (song) => {
+		setTargetSong(song)
+		setReplaceOpen(true)
+	}
+
+	const [replaceOpen, setReplaceOpen] = useState(false)
+	const [targetSong, setTargetSong] = useState(null)
+
+	const handleSongReplace = (newSong) => {
+		if (!targetSong) return
+		setSongList?.((prev) =>
+			prev.map((s) => (s.id === targetSong.id ? newSong : s))
+		)
+	}
+
 	const config = [
 		{
 			label: "Name",
-			render: (item) => item.name,
+			render: (item) => (
+				<button
+					onClick={() => openReplace(item)}
+					className="text-left underline decoration-dotted underline-offset-2 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 rounded-sm"
+					title="Click to choose a different version"
+				>
+					{item.name}
+				</button>
+			),
 			sortValue: (item) => item.name,
 		},
 		{
@@ -123,7 +152,10 @@ const TableDisplay = ({ songList, activeSetlist, clearActive }) => {
 							{songList.length} song{songList.length !== 1 && "s"}
 						</p>
 						{activeSetlist?.name && (
-							<span className="text-xs text-blue-600 truncate max-w-[160px]" title={activeSetlist.name}>
+							<span
+								className="text-xs text-blue-600 truncate max-w-[160px]"
+								title={activeSetlist.name}
+							>
 								{activeSetlist.name}
 							</span>
 						)}
@@ -156,7 +188,10 @@ const TableDisplay = ({ songList, activeSetlist, clearActive }) => {
 					</div>
 				</div>
 			</div>
-			<Paper elevation={3} className="w-full rounded-lg overflow-hidden">
+			<Paper
+				elevation={3}
+				className="w-full rounded-lg overflow-hidden"
+			>
 				<SortableTable
 					data={songList}
 					config={config}
@@ -169,6 +204,12 @@ const TableDisplay = ({ songList, activeSetlist, clearActive }) => {
 					className="w-full rounded-lg"
 				/>
 			</Paper>
+			<ReplaceSongModal
+				open={replaceOpen}
+				onClose={() => setReplaceOpen(false)}
+				song={targetSong}
+				onReplace={handleSongReplace}
+			/>
 		</div>
 	)
 }
