@@ -31,17 +31,27 @@ export default function SearchBar({ setSearchResults, searchResults }) {
 	}, [query, setSearchResults])
 
 	return (
-		<Paper
-			elevation={4}
-			className="flex justify-center m-6 w-[90%] p-6 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 shadow-lg ring-1 ring-blue-300/40 transition-transform hover:scale-[1.02]"
-		>
-			<input
-				type="text"
-				value={query}
-				onChange={handleInputChange}
-				placeholder="Search for a song..."
-				className="p-3 w-96 text-lg rounded-xl bg-green-50/90 text-blue-900 placeholder-blue-400 border border-blue-300 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent shadow-inner transition"
-			/>
-		</Paper>
+		<div className="w-full">
+			<div className="flex items-center gap-2 rounded-lg border border-blue-300 bg-white/80 backdrop-blur px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-green-400 transition">
+				<input
+					type="text"
+					value={query}
+					onChange={handleInputChange}
+					placeholder="Search songs (min 3 chars)"
+					className="w-full bg-transparent text-sm md:text-base placeholder-blue-400 text-blue-900 focus:outline-none"
+				/>
+				{query && query.length >= 3 && (
+					<button
+						onClick={() => {
+							setQuery("")
+							setSearchResults([])
+						}}
+						className="text-[10px] uppercase tracking-wide text-blue-500 hover:text-blue-700 font-semibold"
+					>
+						Clear
+					</button>
+				)}
+			</div>
+		</div>
 	)
 }

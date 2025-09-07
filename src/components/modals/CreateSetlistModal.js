@@ -21,7 +21,7 @@ export default function CreateSetlistModal({
 		<BaseModal
 			open={open}
 			onClose={onClose}
-			maxWidth="max-w-4xl"
+			maxWidth="max-w-6xl" /* widen modal */
 			z={50}
 			panelClass="border-blue-200"
 			label="Create New Setlist"
@@ -35,49 +35,43 @@ export default function CreateSetlistModal({
 					Close
 				</button>
 			</div>
-			<div className="overflow-y-auto p-6 space-y-6">
-				<div className="grid md:grid-cols-3 gap-6">
-					<div className="md:col-span-1 flex flex-col gap-4">
-						<div className="p-4 rounded-xl bg-blue-50 border border-blue-200 flex flex-col gap-4">
-							<h4 className="text-sm font-semibold text-blue-700">
-								Import Options
-							</h4>
-							<button
-								onClick={onOpenPlaylist}
-								className="w-full px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-green-50 text-sm font-semibold shadow"
-							>
-								Import from Spotify
-							</button>
-							<button
-								onClick={onOpenCsv}
-								className="w-full px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-blue-50 text-sm font-semibold shadow"
-							>
-								Import from CSV
-							</button>
+			<div className="overflow-y-auto p-6 space-y-6 flex flex-col h-full">
+				{/* Import options bar */}
+				<div className="flex flex-col gap-3">
+					<div className="flex flex-wrap items-center gap-3 rounded-xl bg-blue-50 border border-blue-200 px-4 py-3">
+						<h4 className="text-sm font-semibold text-blue-700 mr-2">Import Options</h4>
+						<button
+							onClick={onOpenPlaylist}
+							className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-green-50 text-xs font-semibold shadow"
+						>
+							Spotify
+						</button>
+						<button
+							onClick={onOpenCsv}
+							className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-blue-50 text-xs font-semibold shadow"
+						>
+							CSV
+						</button>
+					</div>
+				</div>
+				{/* Main content stacked layout */}
+				<div className="flex flex-col gap-6 flex-1">
+					<div className="p-4 rounded-xl bg-green-50 border border-green-200 flex flex-col">
+						<h4 className="text-sm font-semibold text-green-700 mb-3">Search & Add Songs</h4>
+						<div className="mb-4">
+							<SearchBar setSearchResults={setSearchResults} />
+						</div>
+						<div className="p-3 rounded-lg bg-white/60 border border-green-200 max-h-60 overflow-auto">
+							<h5 className="text-xs font-semibold text-green-700 mb-2">Search Results</h5>
+							<SearchResults
+								searchResults={searchResults}
+								setSongList={setSongList}
+							/>
 						</div>
 					</div>
-					<div className="md:col-span-2 flex flex-col gap-4">
-						<div className="p-4 rounded-xl bg-green-50 border border-green-200">
-							<h4 className="text-sm font-semibold text-green-700 mb-3">
-								Search & Add Songs
-							</h4>
-							<div className="mb-4">
-								<SearchBar setSearchResults={setSearchResults} />
-							</div>
-							<div className="p-3 rounded-lg bg-white/60 border border-green-200">
-								<h5 className="text-xs font-semibold text-green-700 mb-2">
-									Search Results
-								</h5>
-								<SearchResults
-									searchResults={searchResults}
-									setSongList={setSongList}
-								/>
-							</div>
-						</div>
-						<div className="p-4 rounded-xl bg-blue-50 border border-blue-200">
-							<h4 className="text-sm font-semibold text-blue-700 mb-2">
-								Working Setlist
-							</h4>
+					<div className="p-4 rounded-xl bg-blue-50 border border-blue-200 flex flex-col flex-1 min-h-[320px]">
+						{/* Heading removed (redundant with table header) */}
+						<div className="flex-1 overflow-auto">
 							<TableDisplay
 								songList={songList}
 								activeSetlist={activeSetlist}

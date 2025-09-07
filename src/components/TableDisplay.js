@@ -111,11 +111,52 @@ const TableDisplay = ({ songList, activeSetlist, clearActive }) => {
 		return null
 	}
 	return (
-		<div className="w-full flex flex-col justify-center items-center">
-			<Paper
-				elevation={3}
-				className="m-4 w-[60%] rounded-lg"
-			>
+		<div className="w-full flex flex-col gap-3">
+			{/* Header with left-aligned title + count, then input & buttons */}
+			<div className="flex flex-col gap-2 px-1">
+				<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+					<div className="flex items-baseline gap-3">
+						<h4 className="text-sm font-semibold text-blue-700 whitespace-nowrap">
+							Working Setlist
+						</h4>
+						<p className="text-[11px] text-blue-500 tracking-wide whitespace-nowrap">
+							{songList.length} song{songList.length !== 1 && "s"}
+						</p>
+						{activeSetlist?.name && (
+							<span className="text-xs text-blue-600 truncate max-w-[160px]" title={activeSetlist.name}>
+								{activeSetlist.name}
+							</span>
+						)}
+					</div>
+					<div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1">
+						{!activeSetlist && (
+							<Input
+								value={setlistName}
+								onChange={(e) => setSetlistName(e.target.value)}
+								inputClassName="text-center w-full sm:w-56"
+								placeHolder="Setlist Name"
+							/>
+						)}
+						<div className="flex items-center gap-2">
+							<Button
+								className="bg-blue-500 text-green-200 font-bold px-4 py-2 rounded-lg"
+								onClick={handleSaveSetlist}
+							>
+								{activeSetlist ? "Update" : "Save"}
+							</Button>
+							{activeSetlist && (
+								<Button
+									className="bg-gray-400 text-white font-bold px-4 py-2 rounded-lg"
+									onClick={clearActive}
+								>
+									New
+								</Button>
+							)}
+						</div>
+					</div>
+				</div>
+			</div>
+			<Paper elevation={3} className="w-full rounded-lg overflow-hidden">
 				<SortableTable
 					data={songList}
 					config={config}
@@ -128,32 +169,6 @@ const TableDisplay = ({ songList, activeSetlist, clearActive }) => {
 					className="w-full rounded-lg"
 				/>
 			</Paper>
-			<div className=" flex flex-col justify-center items-center gap-2">
-				{!activeSetlist && (
-					<Input
-						value={setlistName}
-						onChange={(e) => setSetlistName(e.target.value)}
-						inputClassName="text-center"
-						placeHolder={"Setlist Name"}
-					/>
-				)}
-				<div className="flex gap-2">
-					<Button
-						className="bg-blue-500 text-green-200 font-bold ml-2 p-2 rounded-lg"
-						onClick={handleSaveSetlist}
-					>
-						{activeSetlist ? "Update Setlist" : "Save Setlist"}
-					</Button>
-					{activeSetlist && (
-						<Button
-							className="bg-gray-400 text-white font-bold ml-2 p-2 rounded-lg"
-							onClick={clearActive}
-						>
-							New Setlist
-						</Button>
-					)}
-				</div>
-			</div>
 		</div>
 	)
 }
