@@ -116,7 +116,10 @@ const CSVImporter = ({ onAddSongs, className = "" }) => {
 					{parsing ? "Parsing..." : "Select CSV"}
 				</Button>
 				{fileName && (
-					<span className="text-xs text-blue-700 truncate max-w-[180px]" title={fileName}>
+					<span
+						className="text-xs text-blue-700 truncate max-w-[180px]"
+						title={fileName}
+					>
 						{fileName}
 					</span>
 				)}

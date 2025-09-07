@@ -3,7 +3,9 @@ import React from "react"
 import BaseModal from "./BaseModal"
 import dynamic from "next/dynamic"
 
-const PlaylistImporter = dynamic(() => import("../PlaylistImporter"), { ssr: false })
+const PlaylistImporter = dynamic(() => import("../PlaylistImporter"), {
+	ssr: false,
+})
 
 export default function SpotifyImportModal({ open, onClose }) {
 	return (

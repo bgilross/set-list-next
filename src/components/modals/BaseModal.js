@@ -25,7 +25,9 @@ export default function BaseModal({
 }) {
 	if (!open) return null
 	return (
-		<div className={`fixed inset-0 z-[${z}] flex items-center justify-center p-4`}> 
+		<div
+			className={`fixed inset-0 z-[${z}] flex items-center justify-center p-4`}
+		>
 			<div
 				className={`absolute inset-0 bg-blue-950/60 backdrop-blur-sm ${backdropClass}`}
 				onClick={onClose}

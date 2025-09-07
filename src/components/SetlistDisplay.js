@@ -72,7 +72,13 @@ const SetlistDisplay = ({ userId, setSongList, onSelectSetlist, onCreate }) => {
 						}
 					}}
 					className="group cursor-pointer select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded-md px-1 py-1 transition-colors hover:bg-blue-100/60 active:bg-blue-200"
-					title={processed.length > 0 ? (collapsed ? "Click to expand your setlists" : "Click to collapse your setlists") : undefined}
+					title={
+						processed.length > 0
+							? collapsed
+								? "Click to expand your setlists"
+								: "Click to collapse your setlists"
+							: undefined
+					}
 				>
 					<h2 className="text-2xl font-bold text-blue-700 transition-colors group-hover:text-blue-800 group-active:text-blue-900">
 						Your Setlists
@@ -111,7 +117,10 @@ const SetlistDisplay = ({ userId, setSongList, onSelectSetlist, onCreate }) => {
 					</button>
 				</div>
 			) : !collapsed ? (
-				<ul id="setlist-grid" className="grid gap-6 px-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+				<ul
+					id="setlist-grid"
+					className="grid gap-6 px-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+				>
 					{processed.map((setlist) => (
 						<li key={setlist.id}>
 							<SetlistPreview
