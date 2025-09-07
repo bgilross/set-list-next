@@ -11,6 +11,7 @@ function Table({
 	rowsClassName,
 	tableClassName,
 	headerRowClassName,
+	rowClassNameFn,
 }) {
 	const renderedHeaders = config.map((column, index) => {
 		const isFirst = index === 0
@@ -74,7 +75,9 @@ function Table({
 		})
 		return (
 			<tr
-				className={cellsClassName}
+				className={`${cellsClassName || ""} ${
+					rowClassNameFn ? rowClassNameFn(rowData) : ""
+				}`.trim()}
 				key={keyFn(rowData)}
 			>
 				{renderedCells}

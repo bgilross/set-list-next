@@ -14,6 +14,7 @@ const TableDisplay = ({
 	setSongList,
 	activeSetlist,
 	clearActive,
+	csvSummary,
 }) => {
 	const [setlistName, setSetlistName] = useState("")
 	const { user, userSongs } = useAuth()
@@ -85,9 +86,25 @@ const TableDisplay = ({
 
 	const handleSongReplace = (newSong) => {
 		if (!targetSong) return
-		setSongList?.((prev) =>
-			prev.map((s) => (s.id === targetSong.id ? newSong : s))
-		)
+		setSongList?.((prev) => {
+			return prev.map((s) => {
+				if (s.id === targetSong.id) {
+					// If replaced, mark as matched
+					return {
+						...newSong,
+						spotifyMatched: true,
+						userTags: s.userTags || [],
+					}
+				}
+				return s
+			})
+		})
+		// Adjust csvSummary unmatched count inline if present
+		if (csvSummary && csvSummary.unmatched > 0 && !targetSong.spotifyMatched) {
+			// Mutate summary object (parent holds state; relying on referential update not available here) -> emit event? For simplicity, attach to window for now if needed.
+			csvSummary.unmatched = Math.max(0, csvSummary.unmatched - 1)
+			csvSummary.matched = Math.min(csvSummary.total, csvSummary.matched + 1)
+		}
 	}
 
 	const config = [
@@ -133,14 +150,38 @@ const TableDisplay = ({
 		},
 	]
 
-	const keyFn = (item) => {
-		return item.name
-	}
+	const keyFn = (item) => item.id || item.name
 	if (!songList || songList.length === 0) {
 		return null
 	}
 	return (
 		<div className="w-full flex flex-col gap-3">
+			{csvSummary && !activeSetlist && (
+				<div className="px-3 py-2 rounded-md bg-green-50 border border-green-300 text-[11px] text-green-800 flex flex-wrap items-center gap-3">
+					<span className="font-semibold">Imported</span>
+					{csvSummary.sourceFile && (
+						<span
+							className="truncate max-w-[140px]"
+							title={csvSummary.sourceFile}
+						>
+							from &quot;{csvSummary.sourceFile}&quot;
+						</span>
+					)}
+					<span>
+						{csvSummary.matched}/{csvSummary.total} matched
+						{csvSummary.unmatched > 0 && (
+							<span className="text-yellow-700 font-medium ml-2">
+								{csvSummary.unmatched} unmatched
+							</span>
+						)}
+					</span>
+					{csvSummary.unmatched > 0 && (
+						<span className="text-[10px] text-yellow-700">
+							Click a title to swap to correct Spotify version.
+						</span>
+					)}
+				</div>
+			)}
 			{/* Header with left-aligned title + count, then input & buttons */}
 			<div className="flex flex-col gap-2 px-1">
 				<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -202,6 +243,11 @@ const TableDisplay = ({
 					iconClassName="mr-1 text-green-100"
 					rowsClassName="p-2"
 					className="w-full rounded-lg"
+					rowClassNameFn={(row) =>
+						!row.spotifyMatched && row.id.startsWith("csv-")
+							? "bg-yellow-100 animate-pulse"
+							: ""
+					}
 				/>
 			</Paper>
 			<ReplaceSongModal

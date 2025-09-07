@@ -16,10 +16,18 @@ export default function Main() {
 	const [createModalOpen, setCreateModalOpen] = useState(false)
 	const [playlistModalOpen, setPlaylistModalOpen] = useState(false)
 	const [csvModalOpen, setCsvModalOpen] = useState(false)
+	const [csvSummary, setCsvSummary] = useState(null)
 
 	const openCreate = useCallback(() => {
 		setActiveSetlist(null)
 		setSongList([])
+		setSearchResults([]) // reset any prior search results when starting a new setlist
+		setCreateModalOpen(true)
+	}, [])
+
+	// When user selects existing setlist, just open modal (edit mode)
+	const handleSelectSetlist = useCallback((setlistMeta) => {
+		setActiveSetlist(setlistMeta)
 		setCreateModalOpen(true)
 	}, [])
 
@@ -31,14 +39,17 @@ export default function Main() {
 						setlists={setlists}
 						userId={user.uid}
 						setSongList={setSongList}
-						onSelectSetlist={setActiveSetlist}
+						onSelectSetlist={handleSelectSetlist}
 						onCreate={openCreate}
 					/>
 				</div>
 			)}
 			<CreateSetlistModal
 				open={createModalOpen}
-				onClose={() => setCreateModalOpen(false)}
+				onClose={() => {
+					setCreateModalOpen(false)
+					setSearchResults([]) // clear search results on close
+				}}
 				onOpenPlaylist={() => setPlaylistModalOpen(true)}
 				onOpenCsv={() => setCsvModalOpen(true)}
 				searchResults={searchResults}
@@ -47,6 +58,7 @@ export default function Main() {
 				setSongList={setSongList}
 				activeSetlist={activeSetlist}
 				setActiveSetlist={setActiveSetlist}
+				csvSummary={csvSummary}
 			/>
 			<SpotifyImportModal
 				open={playlistModalOpen}
@@ -56,15 +68,9 @@ export default function Main() {
 				open={csvModalOpen}
 				onClose={() => setCsvModalOpen(false)}
 				onAddSongs={(songs) => setSongList((prev) => [...prev, ...songs])}
+				onSummary={(summary) => setCsvSummary(summary)}
 			/>
-			{activeSetlist && !createModalOpen && (
-				<TableDisplay
-					songList={songList}
-					setSongList={setSongList}
-					activeSetlist={activeSetlist}
-					clearActive={() => setActiveSetlist(null)}
-				/>
-			)}
+			{/* Inline editor removed: editing always occurs in modal now */}
 		</div>
 	)
 }

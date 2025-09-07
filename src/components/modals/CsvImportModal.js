@@ -3,7 +3,12 @@ import React from "react"
 import BaseModal from "./BaseModal"
 import CSVImporter from "../CSVImporter"
 
-export default function CsvImportModal({ open, onClose, onAddSongs }) {
+export default function CsvImportModal({
+	open,
+	onClose,
+	onAddSongs,
+	onSummary,
+}) {
 	return (
 		<BaseModal
 			open={open}
@@ -28,6 +33,7 @@ export default function CsvImportModal({ open, onClose, onAddSongs }) {
 						onAddSongs(songs)
 						onClose()
 					}}
+					onSummary={onSummary}
 				/>
 			</div>
 		</BaseModal>

@@ -42,7 +42,7 @@ function buildSong(row, idx) {
 	}
 }
 
-const CSVImporter = ({ onAddSongs, className = "" }) => {
+const CSVImporter = ({ onAddSongs, onSummary, className = "" }) => {
 	const fileInputRef = useRef(null)
 	const { push } = useToast()
 	const [parsing, setParsing] = useState(false)
@@ -124,6 +124,7 @@ const CSVImporter = ({ onAddSongs, className = "" }) => {
 				type: "info",
 			})
 		}
+		return matchedCount
 	}
 
 	// Simple similarity (Dice coefficient variant over word tokens)
@@ -178,8 +179,15 @@ const CSVImporter = ({ onAddSongs, className = "" }) => {
 						)
 				)
 				const songs = mapped.map(buildSong)
-				const finish = (finalSongs) => {
+				const finish = (finalSongs, matchedCount = 0) => {
 					onAddSongs(finalSongs)
+					onSummary?.({
+						sourceFile: fileName,
+						total: finalSongs.length,
+						matched: matchedCount,
+						unmatched: finalSongs.length - matchedCount,
+						importedAt: Date.now(),
+					})
 					push(`Imported ${finalSongs.length} songs from CSV`, {
 						type: "success",
 					})
@@ -187,9 +195,11 @@ const CSVImporter = ({ onAddSongs, className = "" }) => {
 					setFileName("")
 				}
 				if (autoMatch) {
-					attemptAutoMatch(songs).then(() => finish(songs))
+					attemptAutoMatch(songs).then((matchedCount) =>
+						finish(songs, matchedCount)
+					)
 				} else {
-					finish(songs)
+					finish(songs, 0)
 				}
 			},
 			error: (err) => {

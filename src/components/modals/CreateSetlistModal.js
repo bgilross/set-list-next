@@ -1,5 +1,5 @@
 "use client"
-import React from "react"
+import React, { useRef } from "react"
 import BaseModal from "./BaseModal"
 import SearchBar from "../SearchBar"
 import SearchResults from "../SearchResults"
@@ -16,7 +16,10 @@ export default function CreateSetlistModal({
 	setSongList,
 	activeSetlist,
 	setActiveSetlist,
+	csvSummary,
 }) {
+	const searchInputRef = useRef(null)
+
 	return (
 		<BaseModal
 			open={open}
@@ -25,6 +28,7 @@ export default function CreateSetlistModal({
 			z={50}
 			panelClass="border-blue-200"
 			label="Create New Setlist"
+			initialFocusRef={searchInputRef}
 		>
 			<div className="flex items-center justify-between px-6 py-4 border-b bg-gradient-to-r from-blue-600 to-green-600 rounded-t-2xl text-green-50">
 				<h3 className="font-bold tracking-wide">Create New Setlist</h3>
@@ -63,7 +67,10 @@ export default function CreateSetlistModal({
 							Search & Add Songs
 						</h4>
 						<div className="mb-4">
-							<SearchBar setSearchResults={setSearchResults} />
+							<SearchBar
+								setSearchResults={setSearchResults}
+								inputRefExternal={searchInputRef}
+							/>
 						</div>
 						<div className="p-3 rounded-lg bg-white/60 border border-green-200 max-h-60 overflow-auto">
 							<h5 className="text-xs font-semibold text-green-700 mb-2">
@@ -83,6 +90,7 @@ export default function CreateSetlistModal({
 								setSongList={setSongList}
 								activeSetlist={activeSetlist}
 								clearActive={() => setActiveSetlist(null)}
+								csvSummary={csvSummary}
 							/>
 						</div>
 					</div>
