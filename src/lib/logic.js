@@ -2,8 +2,26 @@
 
 import axios from "axios"
 
-const client_id = "4a25bc2ba5d942ceac4b96d09a9145a5"
-const client_secret = "7cf97751b14e454cac92248db99b2f2b"
+// TODO: Move these to server-side env vars (e.g. .env.local) and proxy through a Next.js Route Handler.
+// Never ship secrets to the browser in production.
+const client_id =
+	process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID ||
+	"4a25bc2ba5d942ceac4b96d09a9145a5"
+const client_secret =
+	process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET ||
+	"7cf97751b14e454cac92248db99b2f2b"
+
+function encodeBasic(id, secret) {
+	if (!id || !secret) throw new Error("Missing Spotify credentials")
+	// Use Buffer on server / supported environments, fallback to btoa in browser
+	if (typeof Buffer !== "undefined" && Buffer.from) {
+		return Buffer.from(`${id}:${secret}`).toString("base64")
+	}
+	if (typeof window !== "undefined" && typeof btoa === "function") {
+		return btoa(`${id}:${secret}`)
+	}
+	throw new Error("No method to base64 encode credentials")
+}
 
 let tokenCache = {
 	access_token: null,
@@ -26,9 +44,7 @@ export async function getToken() {
 			"grant_type=client_credentials",
 			{
 				headers: {
-					Authorization:
-						"Basic " +
-						Buffer.from(`${client_id}:${client_secret}`).toString("base64"),
+					Authorization: "Basic " + encodeBasic(client_id, client_secret),
 					"Content-Type": "application/x-www-form-urlencoded",
 				},
 			}

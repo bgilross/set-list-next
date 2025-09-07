@@ -1,37 +1,97 @@
 import classNames from "classnames"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
-const ScrollableText = ({ text, className }) => {
-	const shouldScroll = text?.length > 15 // Check if the text needs scrolling
-	const [isHovered, setIsHovered] = useState(false) // Track hover state
+/*
+	ScrollableText improvements:
+	- Measures content vs container; if overflow, enables hover marquee.
+	- If no overflow, shows full text (no truncation or animation).
+	- Optional maxWidth can be passed via className (Tailwind) or wrapper style.
+	- Accessible: sets title attr when truncated so full text appears on hover tooltip.
+*/
 
-	const truncatedText = shouldScroll ? `${text.slice(0, 23)}...` : text // Truncate text manually
+const ScrollableText = ({ text = "", className = "", hoverSpeed = 35 }) => {
+	const containerRef = useRef(null)
+	const contentRef = useRef(null)
+	const [overflowing, setOverflowing] = useState(false)
+	const [hover, setHover] = useState(false)
 
-	const classes = classNames(
-		className,
-		"relative group w-48 overflow-hidden p-2 box-border"
+	useEffect(() => {
+		function measure() {
+			if (!containerRef.current || !contentRef.current) return
+			const cW = containerRef.current.clientWidth
+			const sW = contentRef.current.scrollWidth
+			setOverflowing(sW > cW + 2) // buffer
+		}
+		measure()
+		const ro = new ResizeObserver(measure)
+		if (containerRef.current) ro.observe(containerRef.current)
+		return () => ro.disconnect()
+	}, [text])
+
+	const base = classNames(
+		"relative select-none",
+		"px-2 py-1",
+		"transition-colors duration-200",
+		"text-[11px] md:text-xs",
+		"overflow-hidden",
+		className
 	)
+
+	// Animation style: translate left across its width then reset.
+	const animationDuration = (() => {
+		if (!contentRef.current || !containerRef.current) return "8s"
+		const extra =
+			contentRef.current.scrollWidth - containerRef.current.clientWidth
+		const pxPerSec = hoverSpeed // lower is slower
+		const seconds = Math.max(5, extra / pxPerSec)
+		return `${seconds}s`
+	})()
 
 	return (
 		<div
-			className={classes}
-			style={{ boxSizing: "border-box" }}
-			onMouseEnter={() => setIsHovered(true)}
-			onMouseLeave={() => setIsHovered(false)}
+			ref={containerRef}
+			className={base}
+			onMouseEnter={() => overflowing && setHover(true)}
+			onMouseLeave={() => setHover(false)}
+			title={overflowing ? text : undefined}
 		>
 			<div
-				className={`flex items-center space-x-4 ${
-					isHovered ? "animate-marquee" : ""
-				}`}
-				style={{
-					width: isHovered ? "fit-content" : "100%",
-				}}
+				ref={contentRef}
+				className={classNames(
+					"whitespace-nowrap",
+					hover && overflowing && "will-change-transform"
+				)}
+				style={
+					hover && overflowing
+						? {
+								animation: `sl-marquee ${animationDuration} linear 0.4s 1`,
+						  }
+						: undefined
+				}
+				onAnimationEnd={() => setHover(false)}
 			>
-				{/* Show truncated text by default, full text on hover */}
-				<div className="whitespace-nowrap">
-					{isHovered ? text : truncatedText}
-				</div>
+				{text}
 			</div>
+			<style jsx>{`
+				@keyframes sl-marquee {
+					0% {
+						transform: translateX(0);
+					}
+					5% {
+						transform: translateX(0);
+					}
+					95% {
+						transform: translateX(
+							calc(-1 * (100% - ${containerRef.current?.clientWidth || 0}px))
+						);
+					}
+					100% {
+						transform: translateX(
+							calc(-1 * (100% - ${containerRef.current?.clientWidth || 0}px))
+						);
+					}
+				}
+			`}</style>
 		</div>
 	)
 }
