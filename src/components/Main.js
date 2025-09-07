@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import dynamic from "next/dynamic"
+import { useState, useCallback } from "react"
 import { useAuth } from "@/lib/AuthContext"
 import SetlistDisplay from "./SetlistDisplay"
 import TableDisplay from "./TableDisplay"
@@ -17,18 +16,6 @@ export default function Main() {
 	const [createModalOpen, setCreateModalOpen] = useState(false)
 	const [playlistModalOpen, setPlaylistModalOpen] = useState(false)
 	const [csvModalOpen, setCsvModalOpen] = useState(false)
-
-	useEffect(() => {
-		const onKey = (e) => {
-			if (e.key === "Escape") {
-				if (playlistModalOpen) setPlaylistModalOpen(false)
-				else if (csvModalOpen) setCsvModalOpen(false)
-				else if (createModalOpen) setCreateModalOpen(false)
-			}
-		}
-		window.addEventListener("keydown", onKey)
-		return () => window.removeEventListener("keydown", onKey)
-	}, [createModalOpen, playlistModalOpen, csvModalOpen])
 
 	const openCreate = useCallback(() => {
 		setActiveSetlist(null)
