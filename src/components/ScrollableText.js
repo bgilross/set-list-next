@@ -9,7 +9,16 @@ import { useEffect, useRef, useState } from "react"
 	- Accessible: sets title attr when truncated so full text appears on hover tooltip.
 */
 
-const ScrollableText = ({ text = "", className = "", hoverSpeed = 35 }) => {
+// hoverSpeed now represents pixels per second movement (higher = faster)
+// direction: 'left' | 'right'
+const ScrollableText = ({
+	text = "",
+	className = "",
+	hoverSpeed = 120,
+	direction = "left",
+	pauseStartPct = 8,
+	pauseEndPct = 8,
+}) => {
 	const containerRef = useRef(null)
 	const contentRef = useRef(null)
 	const [overflowing, setOverflowing] = useState(false)
@@ -37,15 +46,18 @@ const ScrollableText = ({ text = "", className = "", hoverSpeed = 35 }) => {
 		className
 	)
 
-	// Animation style: translate left across its width then reset.
+	// Animation style: translate across its width then reset.
 	const animationDuration = (() => {
-		if (!contentRef.current || !containerRef.current) return "8s"
+		if (!contentRef.current || !containerRef.current) return "4s"
 		const extra =
 			contentRef.current.scrollWidth - containerRef.current.clientWidth
-		const pxPerSec = hoverSpeed // lower is slower
-		const seconds = Math.max(5, extra / pxPerSec)
+		if (extra <= 0) return "0s"
+		const pxPerSec = Math.max(20, hoverSpeed)
+		const seconds = Math.max(2, extra / pxPerSec)
 		return `${seconds}s`
 	})()
+
+	const containerWidth = containerRef.current?.clientWidth || 0
 
 	return (
 		<div
@@ -64,7 +76,7 @@ const ScrollableText = ({ text = "", className = "", hoverSpeed = 35 }) => {
 				style={
 					hover && overflowing
 						? {
-								animation: `sl-marquee ${animationDuration} linear 0.4s 1`,
+								animation: `sl-marquee-${direction}-${containerWidth} ${animationDuration} linear 0s 1`,
 						  }
 						: undefined
 				}
@@ -73,22 +85,32 @@ const ScrollableText = ({ text = "", className = "", hoverSpeed = 35 }) => {
 				{text}
 			</div>
 			<style jsx>{`
-				@keyframes sl-marquee {
+				@keyframes sl-marquee-left-${containerWidth} {
 					0% {
 						transform: translateX(0);
 					}
-					5% {
+					${pauseStartPct}% {
 						transform: translateX(0);
 					}
-					95% {
-						transform: translateX(
-							calc(-1 * (100% - ${containerRef.current?.clientWidth || 0}px))
-						);
+					${100 - pauseEndPct}% {
+						transform: translateX(calc(-1 * (100% - ${containerWidth}px)));
 					}
 					100% {
-						transform: translateX(
-							calc(-1 * (100% - ${containerRef.current?.clientWidth || 0}px))
-						);
+						transform: translateX(calc(-1 * (100% - ${containerWidth}px)));
+					}
+				}
+				@keyframes sl-marquee-right-${containerWidth} {
+					0% {
+						transform: translateX(calc(-1 * (100% - ${containerWidth}px)));
+					}
+					${pauseStartPct}% {
+						transform: translateX(calc(-1 * (100% - ${containerWidth}px)));
+					}
+					${100 - pauseEndPct}% {
+						transform: translateX(0);
+					}
+					100% {
+						transform: translateX(0);
 					}
 				}
 			`}</style>

@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/AuthContext"
 import SetlistPreview from "./SetlistPreview"
 import { Paper } from "@mui/material"
 import { getSongsByIds } from "@/lib/logic"
-const SetlistDisplay = ({ userId, setSongList }) => {
+const SetlistDisplay = ({ userId, setSongList, onSelectSetlist }) => {
 	const [filter, setFilter] = useState("")
 	const { setlists, setSetlists, userSongs } = useAuth()
 
@@ -34,6 +34,9 @@ const SetlistDisplay = ({ userId, setSongList }) => {
 			}
 		})
 		setSongList(merged)
+		if (onSelectSetlist) {
+			onSelectSetlist({ id: setlist.id, name: setlist.name })
+		}
 	}
 
 	const processed = useMemo(() => {

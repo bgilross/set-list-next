@@ -8,6 +8,7 @@ import Link from "next/link"
 import SpreadWord from "./SpreadWord"
 import { useState } from "react"
 import GoogleLogin from "./GoogleLogin"
+import SpotifyLogin from "./SpotifyLogin"
 
 const Header = ({ user, onLogin }) => {
 	const [spreadWord, setSpreadWord] = useState(false)
@@ -52,7 +53,10 @@ const Header = ({ user, onLogin }) => {
 						</Link>
 					</div>
 				</Box>
-				<GoogleLogin />
+				<div className="flex items-center gap-4">
+					<SpotifyLogin />
+					<GoogleLogin />
+				</div>
 				{/* <Login /> */}
 				{/* Right: User Icon / Login */}
 			</Toolbar>
