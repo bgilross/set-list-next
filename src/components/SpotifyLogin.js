@@ -65,7 +65,7 @@ const SpotifyLogin = ({ onLinked }) => {
 	return (
 		<button
 			onClick={startAuth}
-			className="relative px-4 py-1.5 sm:px-5 sm:py-2 rounded-full text-xs sm:text-sm font-bold text-white shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 transition-all bg-gradient-to-r from-green-600 via-teal-600 to-blue-600 hover:from-green-500 hover:to-blue-500"
+			className="relative px-4 py-1.5 sm:px-5 sm:py-2 rounded-full text-xs sm:text-sm font-bold text-white shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-green-300/60 transition-all bg-green-600 hover:bg-green-500 active:bg-green-700 disabled:opacity-60"
 		>
 			{error ? "Retry Spotify" : "Spotify Login"}
 		</button>

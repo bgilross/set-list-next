@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react"
 import { useAuth } from "@/lib/AuthContext"
 import SetlistDisplay from "./SetlistDisplay"
+import GuestExplore from "./GuestExplore"
 import TableDisplay from "./TableDisplay"
 import CreateSetlistModal from "./modals/CreateSetlistModal"
 import SpotifyImportModal from "./modals/SpotifyImportModal"
@@ -33,6 +34,7 @@ export default function Main() {
 
 	return (
 		<div className="flex flex-col justify-center items-center h-full bg-blue-100">
+			{!user?.uid && <GuestExplore />}
 			{user?.uid && (
 				<div className="w-full max-w-6xl space-y-6">
 					<SetlistDisplay
