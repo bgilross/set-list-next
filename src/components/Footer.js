@@ -8,7 +8,7 @@ const Footer = () => {
 	return (
 		<AppBar
 			position="static"
-			className="bg-blue-600 shadow-2xl shadow-blue-900"
+			className="site-gradient backdrop-blur-md shadow-inner"
 			sx={{
 				borderTopLeftRadius: "1rem",
 				borderTopRightRadius: "1rem",
@@ -20,39 +20,40 @@ const Footer = () => {
 				<Box className="w-1/3">
 					<Typography
 						variant="h6"
-						className="text-green-200"
-					></Typography>
+						className="font-bold text-white drop-shadow-sm"
+					>
+						Set Lister
+					</Typography>
 				</Box>
 
 				{/* Right: Additional Links or Icons */}
-				<Box className="w-1/3">
+				<Box className="w-1/3 flex items-center justify-center">
 					<Typography
 						variant="body2"
-						className="text-green-200"
+						className="text-white/80 text-center space-x-2"
 					>
-						{/* You can add more links here */}
 						<a
 							href="#"
-							className="hover:text-white transition duration-200"
+							className="hover:text-white transition"
 						>
-							Privacy Policy
+							Privacy
 						</a>
-						{" | "}
+						<span className="text-white/40">•</span>
 						<a
 							href="#"
-							className="hover:text-white transition duration-200"
+							className="hover:text-white transition"
 						>
-							Terms of Service
+							Terms
 						</a>
 					</Typography>
 				</Box>
 
-				<Box>
+				<Box className="w-1/3 flex justify-end">
 					<Typography
-						variant="h6"
-						className="text-green-200"
+						variant="body2"
+						className="text-white/70"
 					>
-						Set Lister © {new Date().getFullYear()}
+						© {new Date().getFullYear()}
 					</Typography>
 				</Box>
 			</Toolbar>

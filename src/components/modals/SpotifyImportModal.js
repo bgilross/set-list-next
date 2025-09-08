@@ -17,7 +17,7 @@ export default function SpotifyImportModal({ open, onClose }) {
 			panelClass="border-green-300"
 			label="Import from Spotify"
 		>
-			<div className="flex items-center justify-between px-5 py-3 border-b bg-gradient-to-r from-green-600 to-blue-600 rounded-t-2xl text-green-50">
+			<div className="flex items-center justify-between px-5 py-3 border-b site-gradient rounded-t-2xl text-green-50">
 				<h3 className="text-sm font-bold tracking-wide">Import from Spotify</h3>
 				<button
 					onClick={onClose}

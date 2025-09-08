@@ -49,9 +49,9 @@ const SpotifyLogin = ({ onLinked }) => {
 	if (session) {
 		return (
 			<div className="flex items-center gap-2">
-				<div className="flex items-center gap-1 px-3 py-1 rounded-full bg-green-600/30 border border-green-400/40 text-green-200 text-xs font-medium">
+				<div className="flex items-center gap-1 pl-2 pr-3 py-1 rounded-full bg-gradient-to-r from-green-600/40 via-teal-600/40 to-blue-600/40 border border-white/15 text-green-50 text-[11px] font-semibold shadow-inner">
 					<span className="inline-block w-2 h-2 rounded-full bg-green-300 animate-pulse" />
-					Linked
+					Spotify Linked
 				</div>
 				<button
 					onClick={logoutSpotify}
@@ -65,9 +65,9 @@ const SpotifyLogin = ({ onLinked }) => {
 	return (
 		<button
 			onClick={startAuth}
-			className="px-4 py-2 rounded-full bg-green-500 hover:bg-green-600 text-white text-sm font-semibold shadow"
+			className="relative px-5 py-2 rounded-full text-sm font-bold text-white shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 transition-all bg-gradient-to-r from-green-600 via-teal-600 to-blue-600 hover:from-green-500 hover:to-blue-500"
 		>
-			{error ? "Retry Spotify" : "Login with Spotify"}
+			{error ? "Retry Spotify" : "Spotify Login"}
 		</button>
 	)
 }

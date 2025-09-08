@@ -15,7 +15,7 @@ const Header = ({ user, onLogin }) => {
 	return (
 		<AppBar
 			position="sticky"
-			className="bg-blue-600/95 backdrop-blur shadow-lg"
+			className="site-gradient backdrop-blur-md shadow-xl glass-edge"
 			sx={{
 				borderBottomLeftRadius: "1rem",
 				borderBottomRightRadius: "1rem",
@@ -24,21 +24,21 @@ const Header = ({ user, onLogin }) => {
 		>
 			<Toolbar className="h-20 px-8 flex items-center justify-between gap-6">
 				{/* Left: Brand */}
-				<div className="flex items-center gap-3">
+				<div className="flex items-center gap-3 select-none">
 					<Link
 						href="/"
-						className="text-green-200 font-extrabold text-3xl tracking-tight hover:text-green-50 transition"
+						className="font-extrabold text-3xl tracking-tight text-white drop-shadow-sm hover:text-green-100 transition"
 					>
 						Set Lister
 					</Link>
 				</div>
 				{/* Center: Navigation */}
 				<nav className="flex-1 flex justify-center">
-					<ul className="flex items-center gap-8 text-green-100 text-sm font-semibold">
+					<ul className="flex items-center gap-8 text-white/80 text-sm font-semibold">
 						<li>
 							<Link
 								href="/setlists"
-								className="px-3 py-1 rounded-full hover:bg-green-300/20 transition"
+								className="px-3 py-1 rounded-full hover:bg-white/10 hover:text-white transition"
 							>
 								Dashboard
 							</Link>
@@ -46,7 +46,7 @@ const Header = ({ user, onLogin }) => {
 					</ul>
 				</nav>
 				{/* Right: Auth + Spotify */}
-				<div className="flex items-center gap-5">
+				<div className="flex items-center gap-4">
 					<div className="flex items-center">
 						<SpotifyLogin />
 					</div>
