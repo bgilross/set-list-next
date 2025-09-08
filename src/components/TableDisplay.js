@@ -5,6 +5,7 @@ import { Button } from "@mui/material"
 import Input from "./TextInput"
 import { saveSetlist } from "@/lib/dbService"
 import ReplaceSongModal from "./modals/ReplaceSongModal"
+import RemoveSongModal from "./modals/RemoveSongModal"
 import { useAuth } from "@/lib/AuthContext"
 import { useToast } from "@/lib/ToastContext"
 import TagInput from "./TagInput"
@@ -83,6 +84,8 @@ const TableDisplay = ({
 
 	const [replaceOpen, setReplaceOpen] = useState(false)
 	const [targetSong, setTargetSong] = useState(null)
+	const [removeOpen, setRemoveOpen] = useState(false)
+	const [pendingRemove, setPendingRemove] = useState(null)
 
 	const handleSongReplace = (newSong) => {
 		if (!targetSong) return
@@ -107,13 +110,36 @@ const TableDisplay = ({
 		}
 	}
 
+	const requestRemove = (song) => {
+		setPendingRemove(song)
+		setRemoveOpen(true)
+	}
+
+	const confirmRemove = (song) => {
+		setSongList?.((prev) => prev.filter((s) => s.id !== song.id))
+		setRemoveOpen(false)
+		setPendingRemove(null)
+	}
+
 	const config = [
+		{
+			label: "",
+			render: (item) => (
+				<button
+					onClick={() => requestRemove(item)}
+					title="Remove song"
+					className="group inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-500/10 hover:bg-red-600/20 text-red-600 hover:text-red-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+				>
+					<span className="text-[11px] font-bold leading-none">×</span>
+				</button>
+			),
+		},
 		{
 			label: "Name",
 			render: (item) => (
 				<button
 					onClick={() => openReplace(item)}
-					className="text-left underline decoration-dotted underline-offset-2 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 rounded-sm"
+					className="text-left hover:underline underline-offset-2 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 rounded-sm"
 					title="Click to choose a different version"
 				>
 					{item.name}
@@ -255,6 +281,15 @@ const TableDisplay = ({
 				onClose={() => setReplaceOpen(false)}
 				song={targetSong}
 				onReplace={handleSongReplace}
+			/>
+			<RemoveSongModal
+				open={removeOpen}
+				onClose={() => {
+					setRemoveOpen(false)
+					setPendingRemove(null)
+				}}
+				song={pendingRemove}
+				onConfirm={confirmRemove}
 			/>
 		</div>
 	)
