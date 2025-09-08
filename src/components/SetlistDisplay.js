@@ -20,17 +20,71 @@ const SetlistDisplay = ({ userId, setSongList, onSelectSetlist, onCreate }) => {
 	}
 
 	const handleSelectSetlist = async (setlist) => {
-		const songIds = setlist.songs.map((song) => song.spotifyId)
-		const apiSongs = await getSongsByIds(songIds)
+		const songsRaw = Array.isArray(setlist.songs) ? setlist.songs : []
+		// Normalized fallback from stored data (used if Spotify fetch fails or IDs invalid)
+		const fallback = songsRaw.map((s) => {
+			const id = s.spotifyId || s.id || s.trackId || s.spotify_id || ""
+			const artistName =
+				s.artist || s.artistName || s.artists?.[0]?.name || "Unknown"
+			const artists = s.artists?.length ? s.artists : [{ name: artistName }]
+			return {
+				id,
+				name: s.name || s.title || "Untitled",
+				artists,
+				album: s.album
+					? { name: s.album, release_date: s.year ? `${s.year}-01-01` : "" }
+					: {
+							name: s.album?.name || "",
+							release_date: s.year ? `${s.year}-01-01` : "",
+					  },
+				duration_ms: s.duration_ms || s.duration || 0,
+				userTags: s.userTags || s.tags || [],
+				notes: s.notes || "",
+				spotifyMatched: true,
+			}
+		})
+		// Collect valid Spotify IDs (22 char alphanumeric)
+		const spotifyIdRegex = /^[A-Za-z0-9]{22}$/
+		const validIds = songsRaw
+			.map((s) => s.spotifyId || s.id)
+			.filter((id) => typeof id === "string" && spotifyIdRegex.test(id))
+		if (validIds.length !== songsRaw.length) {
+			console.warn(
+				"Setlist contains invalid/missing Spotify IDs:",
+				songsRaw.length - validIds.length,
+				"invalid of",
+				songsRaw.length
+			)
+		}
+		let apiSongs = []
+		if (validIds.length) {
+			try {
+				apiSongs = await getSongsByIds(validIds)
+			} catch (e) {
+				console.warn("Spotify track fetch failed; using fallback", e)
+			}
+		}
+		// If API returned nothing (or partial), merge with fallback map to ensure display
+		const apiMap = new Map(apiSongs.map((t) => [t.id, t]))
+		const combined = fallback.map((fb) => {
+			const api = fb.id ? apiMap.get(fb.id) : null
+			const base = api || fb
+			return {
+				...base,
+				// Ensure artists + artist string backward compatibility
+				artist: base.artist || base.artists?.[0]?.name || fb.artists?.[0]?.name,
+			}
+		})
+		// Merge user song metadata
 		const userSongMap = new Map(
 			(userSongs || []).map((s) => [s.id || s.spotifyId || s.id, s])
 		)
-		const merged = apiSongs.map((song) => {
+		const merged = combined.map((song) => {
 			const match = userSongMap.get(song.id)
 			return {
 				...song,
-				userTags: match?.userTags || match?.tags || [],
-				notes: match?.notes || "",
+				userTags: match?.userTags || match?.tags || song.userTags || [],
+				notes: match?.notes || song.notes || "",
 			}
 		})
 		setSongList(merged)

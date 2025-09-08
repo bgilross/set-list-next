@@ -32,16 +32,23 @@ export async function searchSpotifySongs(query) {
 // TEMP: still uses public API via server search route enhancement in future
 export async function getSongsByIds(ids) {
 	if (!ids || (Array.isArray(ids) && ids.length === 0)) return []
-	const idArray = Array.isArray(ids) ? ids : String(ids).split(",")
+	const rawArray = Array.isArray(ids) ? ids : String(ids).split(",")
+	// Filter out blanks / undefined / obviously invalid IDs
+	const spotifyIdRegex = /^[A-Za-z0-9]{22}$/
+	const idArray = rawArray.filter(
+		(id) => typeof id === "string" && spotifyIdRegex.test(id.trim())
+	)
+	if (!idArray.length) {
+		console.warn("getSongsByIds: no valid IDs after filtering", ids)
+		return []
+	}
 	const chunks = []
 	for (let i = 0; i < idArray.length; i += 50) {
 		chunks.push(idArray.slice(i, i + 50))
 	}
 	const results = []
 	for (const chunk of chunks) {
-		const res = await fetch(
-			`/api/spotify/tracks?ids=${encodeURIComponent(chunk.join(","))}`
-		)
+		const res = await fetch(`/api/spotify/tracks?ids=${chunk.join(",")}`)
 		if (!res.ok) {
 			console.warn("spotify tracks batch failed", chunk)
 			continue

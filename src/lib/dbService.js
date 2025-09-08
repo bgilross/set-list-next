@@ -82,16 +82,30 @@ export const saveSetlist = async (userId, songList, setlistId, setlistName) => {
 		setlistId,
 		setlistName
 	)
-	const songs = songList.map((song) => ({
-		spotifyId: song.id,
-		dateAdded: new Date().toISOString(),
-		name: song.name,
-		artist: song.artists?.[0]?.name || song.artist,
-		album: song.album?.name || song.album,
-		year: song.album?.release_date?.slice(0, 4) || song.year,
-		userTags: song.userTags || song.tags || [],
-		notes: song.notes || "",
-	}))
+	let skipped = 0
+	const songs = songList.map((song, idx) => {
+		let baseId = song.id || song.spotifyId || song.trackId || null
+		if (!baseId) {
+			// Assign a temporary placeholder so it remains visible & replaceable later
+			baseId = `csv-temp-${Date.now()}-${idx}`
+			skipped++
+		}
+		return {
+			spotifyId: baseId,
+			dateAdded: new Date().toISOString(),
+			name: song.name,
+			artist: song.artists?.[0]?.name || song.artist,
+			album: song.album?.name || song.album,
+			year: song.album?.release_date?.slice(0, 4) || song.year,
+			userTags: song.userTags || song.tags || [],
+			notes: song.notes || "",
+		}
+	})
+	if (skipped) {
+		console.warn(
+			`saveSetlist: assigned placeholder IDs to ${skipped} songs (missing original id).`
+		)
+	}
 
 	const setlistRef = setlistId
 		? doc(db, "users", userId, "setlists", setlistId)

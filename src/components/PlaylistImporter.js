@@ -19,6 +19,7 @@ export default function PlaylistImporter({ onImported, onImportedTracks }) {
 	const [importing, setImporting] = useState(false)
 	const [importName, setImportName] = useState("")
 	const [collapsed, setCollapsed] = useState(false)
+	const [firstLoaded, setFirstLoaded] = useState(false)
 
 	useEffect(() => {
 		if (user?.provider === "spotify" || user?.uid?.startsWith("spotify_")) {
@@ -40,6 +41,7 @@ export default function PlaylistImporter({ onImported, onImportedTracks }) {
 			setPlaylists((prev) => (offset === 0 ? newItems : [...prev, ...newItems]))
 			setHasMore(!!data.next)
 			setNextOffset(offset + newItems.length)
+			if (offset === 0) setFirstLoaded(true)
 			if (offset > 0) {
 				// Auto collapse after extending list to save vertical space
 				setCollapsed(true)
@@ -106,7 +108,15 @@ export default function PlaylistImporter({ onImported, onImportedTracks }) {
 					name: finalName,
 					songs: normalizedSongs,
 				}
-				setSetlists([newSetlist, ...setlists])
+				setSetlists((prev) => {
+					const exists = prev.find(
+						(s) =>
+							s.name === newSetlist.name &&
+							(s.songs?.length || 0) === newSetlist.songs.length
+					)
+					if (exists) return prev
+					return [newSetlist, ...prev]
+				})
 				onImported && onImported(newSetlist)
 				onImportedTracks && onImportedTracks(tracks, finalName)
 				// reset selection
@@ -180,14 +190,18 @@ export default function PlaylistImporter({ onImported, onImportedTracks }) {
 							</button>
 						))}
 					</div>
-					{hasMore && (
+					{(hasMore || !firstLoaded) && (
 						<div className="flex justify-center">
 							<button
 								disabled={loading}
 								onClick={() => fetchPlaylists(nextOffset)}
 								className="px-5 py-2 text-sm rounded-full bg-gradient-to-r from-green-400 to-blue-500 text-blue-950 font-semibold shadow hover:shadow-lg hover:brightness-110 disabled:opacity-50 disabled:shadow-none transition-all"
 							>
-								{loading ? "Loading…" : "Load more"}
+								{loading
+									? "Loading…"
+									: firstLoaded
+									? "Load more"
+									: "Load playlists"}
 							</button>
 						</div>
 					)}
