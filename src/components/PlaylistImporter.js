@@ -3,7 +3,6 @@ import { useEffect, useState } from "react"
 import Image from "next/image"
 import { useAuth } from "@/lib/AuthContext"
 import { saveSetlist } from "@/lib/dbService"
-import TagInput from "./TagInput"
 
 /* Contract:
  * Shows user's Spotify playlists (paginated), allows selecting one, preview tracks, and import as setlist.
@@ -19,7 +18,6 @@ export default function PlaylistImporter({ onImported, onImportedTracks }) {
 	const [tracks, setTracks] = useState([])
 	const [importing, setImporting] = useState(false)
 	const [importName, setImportName] = useState("")
-	const [openTagEditors, setOpenTagEditors] = useState(new Set())
 	const [collapsed, setCollapsed] = useState(false)
 
 	useEffect(() => {
@@ -117,27 +115,7 @@ export default function PlaylistImporter({ onImported, onImportedTracks }) {
 		}
 	}
 
-	const tagInputRefs = new Map()
-	function toggleTagEditor(id) {
-		setOpenTagEditors((prev) => {
-			const next = new Set(prev)
-			next.has(id) ? next.delete(id) : next.add(id)
-			return next
-		})
-		// Focus shortly after render cycle if opening
-		setTimeout(() => {
-			const el = tagInputRefs.get(id)
-			if (el) {
-				el.focus()
-			}
-		}, 30)
-	}
-
-	function updateTags(trackId, tags) {
-		setTracks((ts) =>
-			ts.map((t) => (t.id === trackId ? { ...t, userTags: tags } : t))
-		)
-	}
+	// Tag editing removed here; tags can be managed after import in working setlist
 
 	if (!user) return null
 
@@ -261,62 +239,22 @@ export default function PlaylistImporter({ onImported, onImportedTracks }) {
 						</button>
 					</div>
 					<div className="max-h-80 overflow-y-auto text-sm divide-y divide-blue-400/20 custom-scrollbar pr-1">
-						{tracks.map((t) => {
-							const open = openTagEditors.has(t.id)
-							return (
-								<div
-									key={t.id}
-									className="py-1.5 flex flex-col gap-1"
-								>
-									<div className="flex items-center justify-between gap-4">
-										<div className="truncate">
-											<span className="font-medium text-green-50/90">
-												{t.name}
-											</span>{" "}
-											<span className="text-green-100/60">
-												{t.artists?.map((a) => a.name).join(", ")}
-											</span>
-										</div>
-										<div className="flex items-center gap-2 shrink-0">
-											{!!(t.userTags && t.userTags.length) && (
-												<span className="text-[10px] px-2 py-0.5 rounded-full bg-green-400/30 text-green-50 border border-green-300/40 font-semibold tracking-wide">
-													{t.userTags.length} tag
-													{t.userTags.length > 1 ? "s" : ""}
-												</span>
-											)}
-											<button
-												type="button"
-												onClick={() => toggleTagEditor(t.id)}
-												className={`text-[10px] px-2 py-1 rounded-full font-semibold transition-all shadow ${
-													open
-														? "bg-green-400 text-blue-900"
-														: "bg-blue-600/60 text-green-50 hover:bg-blue-500/70"
-												}`}
-											>
-												#tags
-											</button>
-											<div className="text-green-200/60 text-xs font-mono w-8 text-right">
-												{Math.round(t.duration_ms / 1000 / 60)}m
-											</div>
-										</div>
-									</div>
-									{open && (
-										<div className="pl-2 pr-1 flex flex-col gap-1">
-											<TagInput
-												value={t.userTags || []}
-												onChange={(tags) => updateTags(t.id, tags)}
-												inputRef={(el) => {
-													if (el) tagInputRefs.set(t.id, el)
-												}}
-											/>
-											<div className="text-[10px] text-green-100/40">
-												Press Enter or comma • tags saved on Import
-											</div>
-										</div>
-									)}
+						{tracks.map((t) => (
+							<div
+								key={t.id}
+								className="py-1.5 flex items-center justify-between gap-4"
+							>
+								<div className="truncate">
+									<span className="font-medium text-green-50/90">{t.name}</span>{" "}
+									<span className="text-green-100/60">
+										{t.artists?.map((a) => a.name).join(", ")}
+									</span>
 								</div>
-							)
-						})}
+								<div className="text-green-200/60 text-xs font-mono w-10 text-right">
+									{Math.round(t.duration_ms / 1000 / 60)}m
+								</div>
+							</div>
+						))}
 						{!tracks.length && (
 							<div className="py-8 text-center text-green-100/50 text-sm">
 								Loading tracks…

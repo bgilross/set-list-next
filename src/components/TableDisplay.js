@@ -70,11 +70,10 @@ const TableDisplay = ({
 	)
 
 	const updateSongTags = (id, tags) => {
-		// mutate in place copy
-		const index = songList.findIndex((s) => s.id === id)
-		if (index >= 0) {
-			songList[index].userTags = tags
-		}
+		if (!setSongList) return
+		setSongList((prev) =>
+			prev.map((s) => (s.id === id ? { ...s, userTags: [...tags] } : s))
+		)
 	}
 
 	const openReplace = (song) => {
