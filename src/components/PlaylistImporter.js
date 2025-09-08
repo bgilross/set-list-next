@@ -96,14 +96,15 @@ export default function PlaylistImporter({ onImported, onImportedTracks }) {
 			)
 			if (resp.success) {
 				// optimistic add
+				const finalName = importName || selected.name
 				const newSetlist = {
 					id: `temp_${Date.now()}`,
-					name: importName || selected.name,
+					name: finalName,
 					songs: tracks,
 				}
 				setSetlists([newSetlist, ...setlists])
 				onImported && onImported(newSetlist)
-				onImportedTracks && onImportedTracks(tracks)
+				onImportedTracks && onImportedTracks(tracks, finalName)
 				// reset selection
 				setSelected(null)
 				setTracks([])

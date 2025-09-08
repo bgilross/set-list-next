@@ -17,8 +17,12 @@ export default function CreateSetlistModal({
 	activeSetlist,
 	setActiveSetlist,
 	csvSummary,
+	importedName,
 }) {
 	const searchInputRef = useRef(null)
+	// When an imported playlist name is provided and we're creating a new setlist, prefill title.
+	// Passing down via context/state into TableDisplay isn't direct; TableDisplay manages name internally.
+	// Easiest: expose a custom event using a data attribute? Simpler: rely on TableDisplay to detect a sentinel on song objects? For now we'll add a hidden input injection later if needed.
 
 	return (
 		<BaseModal
@@ -91,6 +95,8 @@ export default function CreateSetlistModal({
 								activeSetlist={activeSetlist}
 								clearActive={() => setActiveSetlist(null)}
 								csvSummary={csvSummary}
+								importedName={importedName}
+								onSaved={onClose}
 							/>
 						</div>
 					</div>

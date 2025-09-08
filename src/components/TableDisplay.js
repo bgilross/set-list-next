@@ -16,9 +16,13 @@ const TableDisplay = ({
 	activeSetlist,
 	clearActive,
 	csvSummary,
+	importedName,
+	onSaved,
 }) => {
 	const [setlistName, setSetlistName] = useState("")
 	const { user, userSongs } = useAuth()
+	const [saving, setSaving] = useState(false)
+	const [saveStatus, setSaveStatus] = useState("idle") // idle | saving | success | error
 	const { push } = useToast()
 
 	// If entering edit mode, preset name & hide input UI
@@ -26,11 +30,13 @@ const TableDisplay = ({
 		if (activeSetlist?.name) {
 			setSetlistName(activeSetlist.name)
 		} else if (!activeSetlist) {
-			setSetlistName("")
+			// Prefill with imported playlist name if provided
+			setSetlistName(importedName || "")
 		}
-	}, [activeSetlist])
+	}, [activeSetlist, importedName])
 
 	const handleSaveSetlist = async () => {
+		if (saving) return
 		if (!activeSetlist && !setlistName) {
 			push("Provide a setlist name", { type: "error" })
 			return
@@ -41,22 +47,40 @@ const TableDisplay = ({
 			return
 		}
 
-		const result = await saveSetlist(
-			user.uid,
-			songList,
-			activeSetlist?.id || null,
-			activeSetlist ? activeSetlist.name : setlistName
-		)
-
-		if (result.success) {
-			push(activeSetlist ? "Setlist updated" : "Setlist saved", {
-				type: "success",
-			})
-		} else {
+		setSaving(true)
+		setSaveStatus("saving")
+		try {
+			const result = await saveSetlist(
+				user.uid,
+				songList,
+				activeSetlist?.id || null,
+				activeSetlist ? activeSetlist.name : setlistName
+			)
+			if (result.success) {
+				push(activeSetlist ? "Setlist updated" : "Setlist saved", {
+					type: "success",
+				})
+				setSaveStatus("success")
+				// Auto clear success badge after 2s if modal stays open
+				if (activeSetlist) {
+					setTimeout(() => {
+						setSaveStatus("idle")
+					}, 2000)
+				}
+				onSaved && onSaved()
+			} else {
+				push("Error saving setlist", { type: "error" })
+				setSaveStatus("error")
+				setTimeout(() => setSaveStatus("idle"), 2500)
+			}
+		} catch (e) {
 			push("Error saving setlist", { type: "error" })
+			setSaveStatus("error")
+			setTimeout(() => setSaveStatus("idle"), 2500)
+		} finally {
+			setSaving(false)
+			console.log("finishing saveSetlist, updating setlist State")
 		}
-
-		console.log("finishing saveSetlist, updating setlist State")
 	}
 
 	// Collect unique existing tags for autocomplete
@@ -237,10 +261,27 @@ const TableDisplay = ({
 						)}
 						<div className="flex items-center gap-2">
 							<Button
-								className="bg-blue-500 text-green-200 font-bold px-4 py-2 rounded-lg"
 								onClick={handleSaveSetlist}
+								disabled={saving}
+								className={`relative flex items-center gap-2 bg-blue-500 text-green-200 font-bold px-4 py-2 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed ${
+									saving ? "animate-pulse" : "hover:bg-blue-600"
+								}`}
 							>
-								{activeSetlist ? "Update" : "Save"}
+								{saving && (
+									<span className="inline-block w-4 h-4 border-2 border-green-200/40 border-t-green-200 rounded-full animate-spin" />
+								)}
+								{saving
+									? activeSetlist
+										? "Updating..."
+										: "Saving..."
+									: activeSetlist
+									? "Update"
+									: "Save"}
+								{!saving && saveStatus === "success" && activeSetlist && (
+									<span className="text-green-200 text-xs font-semibold">
+										✓
+									</span>
+								)}
 							</Button>
 							{activeSetlist && (
 								<Button
@@ -254,6 +295,17 @@ const TableDisplay = ({
 					</div>
 				</div>
 			</div>
+			{saveStatus === "saving" && (
+				<div className="flex items-center gap-2 text-[11px] text-blue-600 font-medium px-1">
+					<span className="inline-block w-3 h-3 border-2 border-blue-400/40 border-t-blue-600 rounded-full animate-spin" />
+					<span>Saving changes…</span>
+				</div>
+			)}
+			{saveStatus === "error" && (
+				<div className="text-[11px] text-red-600 font-medium px-1">
+					Save failed
+				</div>
+			)}
 			<Paper
 				elevation={3}
 				className="w-full rounded-lg overflow-hidden"

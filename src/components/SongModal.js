@@ -25,7 +25,7 @@ const SongModal = ({ open, handleClose, song, setSongList }) => {
 		if (!setSongList) return
 		setSongList((prev) => {
 			if (prev.find((s) => s.id === song.id)) return prev // avoid duplicates
-			return [...prev, { ...song, userTags: tags }]
+			return [{ ...song, userTags: tags }, ...prev]
 		})
 		handleClose()
 	}

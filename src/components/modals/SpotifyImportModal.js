@@ -35,8 +35,8 @@ export default function SpotifyImportModal({
 					onImported={() => {
 						onClose()
 					}}
-					onImportedTracks={(tracks) => {
-						onImportedTracks && onImportedTracks(tracks)
+					onImportedTracks={(tracks, name) => {
+						onImportedTracks && onImportedTracks(tracks, name)
 					}}
 				/>
 			</div>

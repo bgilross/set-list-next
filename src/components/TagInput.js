@@ -47,6 +47,14 @@ export default function TagInput({
 	}
 	return (
 		<div className="flex flex-wrap gap-1 items-center relative">
+			<input
+				value={input}
+				onChange={(e) => setInput(e.target.value)}
+				onKeyDown={handleKey}
+				placeholder={placeholder}
+				ref={mergedRef}
+				className="px-2 py-0.5 text-[10px] rounded bg-blue-900/40 border border-blue-400/40 focus:border-green-300/70 outline-none text-green-50 w-24"
+			/>
 			{value.map((tag) => (
 				<span
 					key={tag}
@@ -62,14 +70,6 @@ export default function TagInput({
 					</button>
 				</span>
 			))}
-			<input
-				value={input}
-				onChange={(e) => setInput(e.target.value)}
-				onKeyDown={handleKey}
-				placeholder={placeholder}
-				ref={mergedRef}
-				className="px-2 py-0.5 text-[10px] rounded bg-blue-900/40 border border-blue-400/40 focus:border-green-300/70 outline-none text-green-50 w-24"
-			/>
 			{input && filtered.length > 0 && (
 				<div className="absolute top-full left-0 mt-1 z-20 bg-blue-900/90 border border-blue-400/40 rounded-lg shadow-lg min-w-[8rem] p-1 flex flex-col gap-0.5">
 					{filtered.map((s) => (

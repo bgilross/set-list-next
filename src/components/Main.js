@@ -18,6 +18,7 @@ export default function Main() {
 	const [playlistModalOpen, setPlaylistModalOpen] = useState(false)
 	const [csvModalOpen, setCsvModalOpen] = useState(false)
 	const [csvSummary, setCsvSummary] = useState(null)
+	const [importedName, setImportedName] = useState("")
 
 	const openCreate = useCallback(() => {
 		setActiveSetlist(null)
@@ -61,12 +62,14 @@ export default function Main() {
 				activeSetlist={activeSetlist}
 				setActiveSetlist={setActiveSetlist}
 				csvSummary={csvSummary}
+				importedName={importedName}
 			/>
 			<SpotifyImportModal
 				open={playlistModalOpen}
 				onClose={() => setPlaylistModalOpen(false)}
-				onImportedTracks={(tracks) => {
+				onImportedTracks={(tracks, name) => {
 					setSongList(tracks)
+					setImportedName(name || "")
 					setPlaylistModalOpen(false)
 					if (!createModalOpen) setCreateModalOpen(true)
 				}}
