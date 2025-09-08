@@ -15,9 +15,9 @@ const Footer = () => {
 				zIndex: 10,
 			}}
 		>
-			<Toolbar className="flex justify-between px-6 py-4">
+			<Toolbar className="flex justify-between px-4 sm:px-6 py-3 sm:py-4 gap-4">
 				{/* Left: Logo or Text */}
-				<Box className="w-1/3">
+				<Box className="w-1/2 sm:w-1/3">
 					<Typography
 						variant="h6"
 						className="font-bold text-white drop-shadow-sm"
@@ -27,7 +27,7 @@ const Footer = () => {
 				</Box>
 
 				{/* Right: Additional Links or Icons */}
-				<Box className="w-1/3 flex items-center justify-center">
+				<Box className="hidden sm:flex w-1/3 items-center justify-center">
 					<Typography
 						variant="body2"
 						className="text-white/80 text-center space-x-2"
@@ -48,7 +48,7 @@ const Footer = () => {
 					</Typography>
 				</Box>
 
-				<Box className="w-1/3 flex justify-end">
+				<Box className="w-1/2 sm:w-1/3 flex justify-end">
 					<Typography
 						variant="body2"
 						className="text-white/70"

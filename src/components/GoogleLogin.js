@@ -80,11 +80,11 @@ const GoogleLogin = ({ hover }) => {
 			{user ? (
 				<Box className="relative flex items-center justify-center">
 					<IconButton onClick={toggleDropdown}>
-						<Box className="w-16 h-16 bg-green-200 hover:bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+						<Box className="w-12 h-12 sm:w-16 sm:h-16 bg-green-200 hover:bg-green-500 rounded-full flex items-center justify-center shadow-lg transition-all">
 							<Avatar
 								alt={user.displayName} // Use displayName for better compatibility
 								src={user.photoURL}
-								className="w-12 h-12" // Avatar style
+								className="w-10 h-10 sm:w-12 sm:h-12" // Avatar style
 							/>
 						</Box>
 					</IconButton>
@@ -157,15 +157,15 @@ const GoogleLogin = ({ hover }) => {
 				<Button
 					aria-label="login"
 					onClick={handleGoogleSignIn}
-					className="group flex items-center gap-2 rounded-full bg-white/90 backdrop-blur px-4 py-1.5 shadow-md ring-1 ring-black/10 hover:ring-white/40 hover:bg-white transition-all duration-200 hover:shadow-lg"
+					className="group flex items-center gap-2 rounded-full bg-white/90 backdrop-blur px-3 py-1 sm:px-4 sm:py-1.5 shadow-md ring-1 ring-black/10 hover:ring-white/40 hover:bg-white transition-all duration-200 hover:shadow-lg text-xs sm:text-sm"
 				>
 					<AccountCircleIcon
 						className="text-blue-600 group-hover:text-green-600 transition-colors"
 						fontSize="inherit"
-						style={{ fontSize: "2.2rem" }}
+						style={{ fontSize: "1.6rem" }}
 					/>
 					<Typography
-						variant="h6"
+						variant="subtitle1"
 						className="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent font-extrabold tracking-tight"
 					>
 						Login
