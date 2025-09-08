@@ -32,6 +32,7 @@ const GoogleLogin = ({ hover }) => {
 	const { signInWithGoogle, logout } = useAuth()
 	const [anchorEl, setAnchorEl] = useState(null) // Menu anchor
 	const [menuOpen, setMenuOpen] = useState(false) // Menu open
+	const [signingIn, setSigningIn] = useState(false) // Loading state for login button
 	const menuRef = useRef(null)
 	const buttonRef = useRef(null)
 
@@ -72,10 +73,14 @@ const GoogleLogin = ({ hover }) => {
 	}, [menuOpen])
 
 	const handleGoogleSignIn = async () => {
+		if (signingIn) return
+		setSigningIn(true)
 		try {
 			await signInWithGoogle()
 		} catch (error) {
 			alert(error.message)
+		} finally {
+			setSigningIn(false)
 		}
 	}
 
@@ -125,7 +130,9 @@ const GoogleLogin = ({ hover }) => {
 							className="absolute right-0 mt-1 w-48 bg-gray-100 shadow-lg transition-transform duration-200 origin-top"
 							style={{
 								opacity: menuOpen ? 1 : 0,
-								transform: menuOpen ? "translateY(0) scale(1)" : "translateY(-6px) scale(0.98)",
+								transform: menuOpen
+									? "translateY(0) scale(1)"
+									: "translateY(-6px) scale(0.98)",
 							}}
 						>
 							<Box className="p-2">
@@ -184,21 +191,30 @@ const GoogleLogin = ({ hover }) => {
 				</Box>
 			) : (
 				<Button
-					aria-label="login"
+					aria-label="Sign in with Google"
 					onClick={handleGoogleSignIn}
-					className="group flex items-center gap-2 rounded-full bg-white/90 backdrop-blur px-3 py-1 sm:px-4 sm:py-1.5 shadow-md ring-1 ring-black/10 hover:ring-white/40 hover:bg-white transition-all duration-200 hover:shadow-lg text-xs sm:text-sm"
+					variant="contained"
+					disabled={signingIn}
+					sx={{
+						backgroundColor: "#1a73e8",
+						"&:hover": { backgroundColor: "#1664c5" },
+						"&:disabled": { backgroundColor: "#9db9e6", color: "#f0f4fa" },
+						textTransform: "none",
+						fontWeight: 600,
+						borderRadius: "999px",
+						px: { xs: 1.75, sm: 2.25 },
+						py: { xs: 0.5, sm: 0.75 },
+						fontSize: { xs: "0.8rem", sm: "0.9rem" },
+						gap: 1,
+						boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+						"&:focus-visible": {
+							outline: "3px solid #ffffff",
+							outlineOffset: "2px",
+						},
+					}}
 				>
-					<AccountCircleIcon
-						className="text-blue-600 group-hover:text-green-600 transition-colors"
-						fontSize="inherit"
-						style={{ fontSize: "1.6rem" }}
-					/>
-					<Typography
-						variant="subtitle1"
-						className="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent font-extrabold tracking-tight"
-					>
-						Login
-					</Typography>
+					<AccountCircleIcon fontSize="small" />
+					{signingIn ? "Signing in…" : "Sign in with Google"}
 				</Button>
 			)}
 		</Box>
