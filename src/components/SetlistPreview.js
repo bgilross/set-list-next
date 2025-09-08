@@ -60,7 +60,9 @@ const SetlistPreview = ({ setlist, handleDelete, handleSelectSetlist }) => {
 								i === 0 ? "rounded-r-md" : ""
 							}`}
 						>
-							<ScrollableText text={song.artist} />
+							<ScrollableText
+								text={song.artist || song.artists?.[0]?.name || ""}
+							/>
 						</div>
 					</div>
 				))}
