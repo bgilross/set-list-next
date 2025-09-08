@@ -1,15 +1,23 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import Image from "next/image"
 import SearchBar from "./SearchBar"
 import SearchResults from "./SearchResults"
 import SpotifyLogin from "./SpotifyLogin"
 import GoogleLogin from "./GoogleLogin"
+import TableDisplay from "./TableDisplay"
+import { useAuth } from "@/lib/AuthContext"
 
 export default function GuestExplore() {
+	const { guestSetlist, setGuestSetlist } = useAuth()
 	const [searchResults, setSearchResults] = useState([])
-	const [songsPreview, setSongsPreview] = useState([])
+	const [songsPreview, setSongsPreview] = useState(guestSetlist?.songs || [])
+	const [setlistName, setSetlistName] = useState(guestSetlist?.name || "")
+
+	useEffect(() => {
+		setGuestSetlist({ name: setlistName, songs: songsPreview })
+	}, [setlistName, songsPreview, setGuestSetlist])
 
 	const handleAddSong = useCallback((song) => {
 		setSongsPreview((prev) => {
@@ -89,20 +97,29 @@ export default function GuestExplore() {
 					</div>
 
 					{songsPreview.length > 0 && (
-						<div className="bg-white/60 backdrop-blur rounded-xl p-4 shadow-inner ring-1 ring-black/5">
-							<h2 className="text-sm font-bold text-blue-900 mb-2">
-								Temporary Selection (not saved)
-							</h2>
-							<ul className="flex flex-wrap gap-2">
-								{songsPreview.map((song) => (
-									<li
-										key={song.id}
-										className="px-2 py-1 rounded-full bg-green-600/20 text-green-900 text-xs font-medium"
-									>
-										{song.name}
-									</li>
-								))}
-							</ul>
+						<div className="bg-white/80 backdrop-blur rounded-xl p-4 shadow-inner ring-1 ring-black/5">
+							<div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+								<h2 className="text-sm font-bold text-blue-900">
+									Temporary Setlist
+								</h2>
+								<input
+									value={setlistName}
+									onChange={(e) => setSetlistName(e.target.value)}
+									placeholder="Name (optional)"
+									className="text-xs px-2 py-1 rounded border border-blue-200 focus:outline-none focus:ring-2 focus:ring-green-400 bg-white/70"
+								/>
+							</div>
+							<TableDisplay
+								songList={songsPreview}
+								setSongList={setSongsPreview}
+								activeSetlist={null}
+								clearActive={() => {}}
+								csvSummary={null}
+							/>
+							<p className="mt-2 text-[11px] text-blue-600">
+								Login to save this setlist permanently. It will auto-migrate
+								after login.
+							</p>
 						</div>
 					)}
 

@@ -8,7 +8,7 @@ import TagInput from "./TagInput"
 /* Contract:
  * Shows user's Spotify playlists (paginated), allows selecting one, preview tracks, and import as setlist.
  */
-export default function PlaylistImporter({ onImported }) {
+export default function PlaylistImporter({ onImported, onImportedTracks }) {
 	const { user, setlists, setSetlists } = useAuth()
 	const [playlists, setPlaylists] = useState([])
 	const [loading, setLoading] = useState(false)
@@ -105,6 +105,7 @@ export default function PlaylistImporter({ onImported }) {
 				}
 				setSetlists([newSetlist, ...setlists])
 				onImported && onImported(newSetlist)
+				onImportedTracks && onImportedTracks(tracks)
 				// reset selection
 				setSelected(null)
 				setTracks([])
@@ -116,12 +117,20 @@ export default function PlaylistImporter({ onImported }) {
 		}
 	}
 
+	const tagInputRefs = new Map()
 	function toggleTagEditor(id) {
 		setOpenTagEditors((prev) => {
 			const next = new Set(prev)
 			next.has(id) ? next.delete(id) : next.add(id)
 			return next
 		})
+		// Focus shortly after render cycle if opening
+		setTimeout(() => {
+			const el = tagInputRefs.get(id)
+			if (el) {
+				el.focus()
+			}
+		}, 30)
 	}
 
 	function updateTags(trackId, tags) {
@@ -296,6 +305,9 @@ export default function PlaylistImporter({ onImported }) {
 											<TagInput
 												value={t.userTags || []}
 												onChange={(tags) => updateTags(t.id, tags)}
+												inputRef={(el) => {
+													if (el) tagInputRefs.set(t.id, el)
+												}}
 											/>
 											<div className="text-[10px] text-green-100/40">
 												Press Enter or comma • tags saved on Import

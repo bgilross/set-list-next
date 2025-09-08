@@ -7,7 +7,11 @@ const PlaylistImporter = dynamic(() => import("../PlaylistImporter"), {
 	ssr: false,
 })
 
-export default function SpotifyImportModal({ open, onClose }) {
+export default function SpotifyImportModal({
+	open,
+	onClose,
+	onImportedTracks,
+}) {
 	return (
 		<BaseModal
 			open={open}
@@ -30,6 +34,9 @@ export default function SpotifyImportModal({ open, onClose }) {
 				<PlaylistImporter
 					onImported={() => {
 						onClose()
+					}}
+					onImportedTracks={(tracks) => {
+						onImportedTracks && onImportedTracks(tracks)
 					}}
 				/>
 			</div>

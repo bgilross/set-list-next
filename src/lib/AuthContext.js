@@ -15,13 +15,46 @@ export const AuthProvider = ({ children }) => {
 	const [loading, setLoading] = useState(true) // Track loading state
 	const [setlists, setSetlists] = useState([])
 	const [userSongs, setUserSongs] = useState([])
+	const [guestSetlist, setGuestSetlist] = useState(() => {
+		if (typeof window === "undefined") return null
+		try {
+			const raw = localStorage.getItem("guest_setlist")
+			return raw ? JSON.parse(raw) : null
+		} catch {
+			return null
+		}
+	})
 
-	// Listen to Auth state changes and set the user
+	// Persist guest setlist
+	useEffect(() => {
+		if (typeof window === "undefined") return
+		if (guestSetlist)
+			localStorage.setItem("guest_setlist", JSON.stringify(guestSetlist))
+		else localStorage.removeItem("guest_setlist")
+	}, [guestSetlist])
+
+	// Listen to Auth state changes and set the user; migrate guest setlist if exists
 	useEffect(() => {
 		const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
 			if (firebaseUser) {
 				setUser(firebaseUser)
 				setLoading(false)
+				// Migrate guest setlist after login (fire and forget)
+				try {
+					if (guestSetlist?.songs?.length) {
+						// Save as new setlist for this user
+						const { saveSetlist } = await import("./dbService")
+						await saveSetlist(
+							firebaseUser.uid,
+							guestSetlist.songs,
+							null,
+							guestSetlist.name || "Guest Setlist"
+						)
+						setGuestSetlist(null)
+					}
+				} catch (e) {
+					console.warn("guest migration failed", e)
+				}
 			} else {
 				// Try Spotify session as fallback
 				try {
@@ -47,7 +80,8 @@ export const AuthProvider = ({ children }) => {
 			}
 		})
 		return () => unsubscribe()
-	}, [])
+		// guestSetlist included for migration correctness; only triggers when auth state flips or guest changes while logging in
+	}, [guestSetlist])
 
 	// Fetch setlists when the user state changes
 	useEffect(() => {
@@ -125,6 +159,8 @@ export const AuthProvider = ({ children }) => {
 				loading,
 				setSetlists,
 				userSongs,
+				guestSetlist,
+				setGuestSetlist,
 			}}
 		>
 			{children}

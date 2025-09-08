@@ -65,6 +65,11 @@ export default function Main() {
 			<SpotifyImportModal
 				open={playlistModalOpen}
 				onClose={() => setPlaylistModalOpen(false)}
+				onImportedTracks={(tracks) => {
+					setSongList(tracks)
+					setPlaylistModalOpen(false)
+					if (!createModalOpen) setCreateModalOpen(true)
+				}}
 			/>
 			<CsvImportModal
 				open={csvModalOpen}
