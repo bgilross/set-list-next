@@ -11,7 +11,7 @@ import {
 	Slide,
 	Paper,
 } from "@mui/material"
-import { useState, useEffect, forwardRef } from "react"
+import { useState, useEffect, useRef, forwardRef } from "react"
 import { auth } from "../lib/firebaseConfig"
 import { onAuthStateChanged } from "firebase/auth"
 import AccountCircleIcon from "@mui/icons-material/AccountCircle"
@@ -32,6 +32,8 @@ const GoogleLogin = ({ hover }) => {
 	const { signInWithGoogle, logout } = useAuth()
 	const [anchorEl, setAnchorEl] = useState(null) // Menu anchor
 	const [menuOpen, setMenuOpen] = useState(false) // Menu open
+	const menuRef = useRef(null)
+	const buttonRef = useRef(null)
 
 	useEffect(() => {
 		const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -44,6 +46,30 @@ const GoogleLogin = ({ hover }) => {
 
 		return () => unsubscribe()
 	}, [])
+
+	// Close on outside click / escape
+	useEffect(() => {
+		if (!menuOpen) return
+		function handleClick(e) {
+			if (
+				menuRef.current &&
+				!menuRef.current.contains(e.target) &&
+				buttonRef.current &&
+				!buttonRef.current.contains(e.target)
+			) {
+				setMenuOpen(false)
+			}
+		}
+		function handleKey(e) {
+			if (e.key === "Escape") setMenuOpen(false)
+		}
+		document.addEventListener("mousedown", handleClick)
+		document.addEventListener("keydown", handleKey)
+		return () => {
+			document.removeEventListener("mousedown", handleClick)
+			document.removeEventListener("keydown", handleKey)
+		}
+	}, [menuOpen])
 
 	const handleGoogleSignIn = async () => {
 		try {
@@ -79,7 +105,10 @@ const GoogleLogin = ({ hover }) => {
 		<Box className="flex items-center space-x-3">
 			{user ? (
 				<Box className="relative flex items-center justify-center">
-					<IconButton onClick={toggleDropdown}>
+					<IconButton
+						onClick={toggleDropdown}
+						ref={buttonRef}
+					>
 						<Box className="w-12 h-12 sm:w-16 sm:h-16 bg-green-200 hover:bg-green-500 rounded-full flex items-center justify-center shadow-lg transition-all">
 							<Avatar
 								alt={user.displayName} // Use displayName for better compatibility
@@ -91,12 +120,12 @@ const GoogleLogin = ({ hover }) => {
 
 					{menuOpen && (
 						<Paper
+							ref={menuRef}
 							elevation={3}
-							className="absolute right-0 mt-1 w-48 bg-gray-100 shadow-lg transition-transform duration-300"
+							className="absolute right-0 mt-1 w-48 bg-gray-100 shadow-lg transition-transform duration-200 origin-top"
 							style={{
-								opacity: open ? 1 : 0,
-								visibility: open ? "visible" : "hidden",
-								transform: open ? "translateY(0)" : "translateY(-10px)", // Slide effect
+								opacity: menuOpen ? 1 : 0,
+								transform: menuOpen ? "translateY(0) scale(1)" : "translateY(-6px) scale(0.98)",
 							}}
 						>
 							<Box className="p-2">
