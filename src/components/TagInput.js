@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 
 export default function TagInput({
 	value = [],
@@ -10,6 +10,12 @@ export default function TagInput({
 	inputRef,
 }) {
 	const [input, setInput] = useState("")
+	const localRef = useRef(null)
+	const mergedRef = (el) => {
+		localRef.current = el
+		if (typeof inputRef === "function") inputRef(el)
+		else if (inputRef) inputRef.current = el
+	}
 	const base =
 		"px-2 py-0.5 rounded-full bg-gradient-to-r from-green-400 to-blue-400 text-blue-900 text-[10px] font-semibold shadow"
 	const filtered = suggestions
@@ -25,10 +31,15 @@ export default function TagInput({
 		if (value.map((v) => v.toLowerCase()).includes(t.toLowerCase())) return
 		onChange([...value, t])
 		setInput("")
+		// Re-focus after update (next paint)
+		requestAnimationFrame(() => {
+			localRef.current && localRef.current.focus()
+		})
 	}
 	function handleKey(e) {
 		if (e.key === "Enter" || e.key === ",") {
 			e.preventDefault()
+			e.stopPropagation()
 			add(input)
 		} else if (e.key === "Backspace" && !input && value.length) {
 			onChange(value.slice(0, -1))
@@ -56,7 +67,7 @@ export default function TagInput({
 				onChange={(e) => setInput(e.target.value)}
 				onKeyDown={handleKey}
 				placeholder={placeholder}
-				ref={inputRef}
+				ref={mergedRef}
 				className="px-2 py-0.5 text-[10px] rounded bg-blue-900/40 border border-blue-400/40 focus:border-green-300/70 outline-none text-green-50 w-24"
 			/>
 			{input && filtered.length > 0 && (
