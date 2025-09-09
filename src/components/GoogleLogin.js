@@ -11,9 +11,8 @@ import {
 	Slide,
 	Paper,
 } from "@mui/material"
-import { useState, useEffect, useRef, forwardRef } from "react"
-import { auth } from "../lib/firebaseConfig"
-import { onAuthStateChanged } from "firebase/auth"
+import { useState, useRef, useEffect, forwardRef } from "react"
+// Removed direct firebase imports; use AuthContext only
 import AccountCircleIcon from "@mui/icons-material/AccountCircle"
 import { useAuth } from "../lib/AuthContext"
 
@@ -28,25 +27,12 @@ const Transition = forwardRef(function Transition(props, ref) {
 })
 
 const GoogleLogin = ({ hover }) => {
-	const [user, setUser] = useState(null)
-	const { signInWithGoogle, logout } = useAuth()
+	const { user, signInWithGoogle, logout } = useAuth()
 	const [anchorEl, setAnchorEl] = useState(null) // Menu anchor
 	const [menuOpen, setMenuOpen] = useState(false) // Menu open
 	const [signingIn, setSigningIn] = useState(false) // Loading state for login button
 	const menuRef = useRef(null)
 	const buttonRef = useRef(null)
-
-	useEffect(() => {
-		const unsubscribe = onAuthStateChanged(auth, (user) => {
-			if (user) {
-				setUser(user)
-			} else {
-				setUser(null)
-			}
-		})
-
-		return () => unsubscribe()
-	}, [])
 
 	// Close on outside click / escape
 	useEffect(() => {

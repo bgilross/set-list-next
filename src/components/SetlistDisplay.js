@@ -1,7 +1,6 @@
 "use client"
 
 import React, { useMemo, useState } from "react"
-import { deleteSetlist } from "../lib/dbService" // Import functions
 import { useAuth } from "@/lib/AuthContext"
 import SetlistPreview from "./SetlistPreview"
 import { getSongsByIds } from "@/lib/logic"
@@ -11,11 +10,22 @@ const SetlistDisplay = ({ userId, setSongList, onSelectSetlist, onCreate }) => {
 	// Removed interactive sorting; default ordering will be Updated DESC only.
 
 	const handleDelete = async (setlistId) => {
-		const result = await deleteSetlist(userId, setlistId)
-		if (result.success) {
-			setSetlists(setlists.filter((s) => s.id !== setlistId))
-		} else {
-			console.error("Failed to delete setlist:", result.error)
+		try {
+			const res = await fetch(
+				`/api/setlists?id=${encodeURIComponent(setlistId)}`,
+				{
+					method: "DELETE",
+					headers: { "x-artist-id": userId },
+				}
+			)
+			const json = await res.json()
+			if (res.ok && json.success) {
+				setSetlists(setlists.filter((s) => s.id !== setlistId))
+			} else {
+				console.error("Failed to delete setlist:", json.error)
+			}
+		} catch (e) {
+			console.error("Failed to delete setlist:", e)
 		}
 	}
 

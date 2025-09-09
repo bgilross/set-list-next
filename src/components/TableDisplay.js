@@ -3,7 +3,7 @@ import { Paper } from "@mui/material"
 import { useState, useEffect } from "react"
 import { Button } from "@mui/material"
 import Input from "./TextInput"
-import { saveSetlist } from "@/lib/dbService"
+// Removed dbService import
 const USE_PRISMA_DB = process.env.NEXT_PUBLIC_USE_PRISMA_DB === "true"
 import ReplaceSongModal from "./modals/ReplaceSongModal"
 import RemoveSongModal from "./modals/RemoveSongModal"
@@ -21,7 +21,7 @@ const TableDisplay = ({
 	onSaved,
 }) => {
 	const [setlistName, setSetlistName] = useState("")
-	const { user, userSongs } = useAuth()
+	const { user, userSongs, role, promoteToArtist } = useAuth()
 	const [saving, setSaving] = useState(false)
 	const [saveStatus, setSaveStatus] = useState("idle") // idle | saving | success | error
 	const { push } = useToast()
@@ -64,7 +64,18 @@ const TableDisplay = ({
 						songs: songList,
 					}),
 				})
-				if (!res.ok) throw new Error("save failed")
+				if (!res.ok) {
+					if (res.status === 403) {
+						push(
+							"Artist access required. Promote in Profile to create setlists.",
+							{
+								type: "error",
+							}
+						)
+						throw new Error("forbidden")
+					}
+					throw new Error("save failed")
+				}
 				const json = await res.json()
 				if (json.success) {
 					push(activeSetlist ? "Setlist updated" : "Setlist saved", {
@@ -79,26 +90,8 @@ const TableDisplay = ({
 					throw new Error(json.error || "save failed")
 				}
 			} else {
-				const result = await saveSetlist(
-					user.uid,
-					songList,
-					activeSetlist?.id || null,
-					activeSetlist ? activeSetlist.name : setlistName
-				)
-				if (result.success) {
-					push(activeSetlist ? "Setlist updated" : "Setlist saved", {
-						type: "success",
-					})
-					setSaveStatus("success")
-					if (activeSetlist) {
-						setTimeout(() => setSaveStatus("idle"), 2000)
-					}
-					onSaved && onSaved()
-				} else {
-					push("Error saving setlist", { type: "error" })
-					setSaveStatus("error")
-					setTimeout(() => setSaveStatus("idle"), 2500)
-				}
+				// Legacy path removed: require Prisma path
+				throw new Error("Legacy save disabled")
 			}
 		} catch (e) {
 			push("Error saving setlist", { type: "error" })
@@ -232,6 +225,17 @@ const TableDisplay = ({
 	}
 	return (
 		<div className="w-full flex flex-col gap-3">
+			{role !== "ARTIST" && (
+				<div className="px-3 py-2 rounded-md bg-yellow-50 border border-yellow-300 text-[12px] text-yellow-800 flex items-center justify-between gap-3">
+					<span>You need an artist account to create or edit setlists.</span>
+					<button
+						onClick={() => promoteToArtist?.()}
+						className="px-3 py-1 rounded-md bg-yellow-600 text-white text-xs font-semibold hover:bg-yellow-700"
+					>
+						Become an Artist
+					</button>
+				</div>
+			)}
 			{csvSummary && !activeSetlist && (
 				<div className="px-3 py-2 rounded-md bg-green-50 border border-green-300 text-[11px] text-green-800 flex flex-wrap items-center gap-3">
 					<span className="font-semibold">Imported</span>
@@ -289,7 +293,7 @@ const TableDisplay = ({
 						<div className="flex items-center gap-2">
 							<Button
 								onClick={handleSaveSetlist}
-								disabled={saving}
+								disabled={saving || role !== "ARTIST"}
 								className={`relative flex items-center gap-2 bg-blue-500 text-green-200 font-bold px-4 py-2 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed ${
 									saving ? "animate-pulse" : "hover:bg-blue-600"
 								}`}

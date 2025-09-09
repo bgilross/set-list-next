@@ -23,9 +23,26 @@ enum RequestStatus {
   CANCELLED
 }
 
+// User roles for application authorization
+enum UserRole {
+  ARTIST
+  AUDIENCE
+  ADMIN
+}
+
 // --------------------------------------------------
 // MODELS
 // --------------------------------------------------
+model User {
+  id          String    @id @default(cuid())
+  firebaseUid String    @unique
+  displayName String
+  photoURL    String?
+  role        UserRole  @default(AUDIENCE)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
 model Artist {
   id           String        @id @default(cuid())
   firebaseUid  String?       @unique

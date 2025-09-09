@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import { useAuth } from "@/lib/AuthContext"
-import { saveSetlist } from "@/lib/dbService"
+// Removed dbService import
 const USE_PRISMA_DB = process.env.NEXT_PUBLIC_USE_PRISMA_DB === "true"
 
 /* Contract:
@@ -111,37 +111,8 @@ export default function PlaylistImporter({ onImported, onImportedTracks }) {
 				setSelected(null)
 				setTracks([])
 			} else {
-				const resp = await saveSetlist(
-					user.uid,
-					tracks,
-					null,
-					importName || selected.name
-				)
-				if (resp.success) {
-					const finalName = importName || selected.name
-					const normalizedSongs = tracks.map((t) => ({
-						...t,
-						artist: t.artists?.[0]?.name || t.artist,
-					}))
-					const newSetlist = {
-						id: `temp_${Date.now()}`,
-						name: finalName,
-						songs: normalizedSongs,
-					}
-					setSetlists((prev) => {
-						const exists = prev.find(
-							(s) =>
-								s.name === newSetlist.name &&
-								(s.songs?.length || 0) === newSetlist.songs.length
-						)
-						if (exists) return prev
-						return [newSetlist, ...prev]
-					})
-					onImported && onImported(newSetlist)
-					onImportedTracks && onImportedTracks(tracks, finalName)
-					setSelected(null)
-					setTracks([])
-				}
+				// Legacy path removed: require Prisma path
+				throw new Error("Legacy save disabled")
 			}
 		} catch (e) {
 			setError(e.message)

@@ -1,23 +1,11 @@
 "use client"
 import { useEffect, useState, useMemo } from "react"
-import { doc, getDoc, onSnapshot } from "firebase/firestore"
-import { db } from "@/lib/firebaseConfig"
 
-// Resolve slug -> { artistId, activeSetlistId }
+// TODO: Build a Prisma-backed slug resolver and audience setlist fetcher.
+// For now, expect the slug to be the artist's display slug and use a server lookup route when added.
 async function resolveSlug(slug) {
-	if (!slug) return null
-	try {
-		const ref = doc(db, "publicSlugs", slug)
-		const snap = await getDoc(ref)
-		if (!snap.exists()) return null
-		return {
-			artistId: snap.data().artistId,
-			activeSetlistId: snap.data().activeSetlistId || null,
-		}
-	} catch (e) {
-		console.warn("slug resolution failed", e)
-		return null
-	}
+	// Placeholder – no Firebase. Implement via /api/audience/slug in a future step.
+	return null
 }
 
 export default function PublicAudienceView({ slug }) {
@@ -40,39 +28,9 @@ export default function PublicAudienceView({ slug }) {
 			setArtistId(resolved.artistId)
 			setActiveSetlistId(resolved.activeSetlistId)
 
-			// Profile one-time (could also onSnapshot if you expect live edits)
-			try {
-				const profRef = doc(db, "users", resolved.artistId)
-				const profSnap = await getDoc(profRef)
-				if (profSnap.exists()) {
-					const d = profSnap.data()
-					setProfile({
-						displayName: d.displayName || d.name || "Artist",
-						blurb: d.publicBlurb || "",
-					})
-				}
-			} catch (e) {
-				console.warn("profile fetch failed", e)
-			}
-
-			// Listen to active setlist document (reuses existing artist setlists collection)
-			let unsub
-			if (resolved.activeSetlistId) {
-				const sRef = doc(
-					db,
-					"users",
-					resolved.artistId,
-					"setlists",
-					resolved.activeSetlistId
-				)
-				unsub = onSnapshot(sRef, (snap) => {
-					if (snap.exists()) setSetlistDoc({ id: snap.id, ...snap.data() })
-				})
-			}
+			// Firebase removed. Wire up Prisma-backed audience API soon.
 			setStatus("ready")
-			return () => {
-				if (unsub) unsub()
-			}
+			return () => {}
 		})()
 	}, [slug])
 

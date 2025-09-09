@@ -1,10 +1,8 @@
 "use client"
 
 import { createContext, useContext, useEffect, useState } from "react"
-import { auth, db, googleProvider } from "./firebaseConfig"
 import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth"
-import { setDoc, doc, getDoc } from "firebase/firestore"
-import { getSetlists, getUserSongs } from "./dbService"
+import { auth, googleProvider } from "./firebaseConfig"
 // Lazy dynamic import of Postgres service when flag enabled
 const USE_PRISMA_DB = process.env.NEXT_PUBLIC_USE_PRISMA_DB === "true"
 
@@ -17,6 +15,8 @@ export const AuthProvider = ({ children }) => {
 	const [loading, setLoading] = useState(true) // Track loading state
 	const [setlists, setSetlists] = useState([])
 	const [userSongs, setUserSongs] = useState([])
+	const [role, setRole] = useState(null)
+	const [artistId, setArtistId] = useState(null)
 	const [guestSetlist, setGuestSetlist] = useState(() => {
 		if (typeof window === "undefined") return null
 		try {
@@ -44,27 +44,17 @@ export const AuthProvider = ({ children }) => {
 				// Migrate guest setlist after login (fire and forget)
 				try {
 					if (guestSetlist?.songs?.length) {
-						if (USE_PRISMA_DB) {
-							await fetch("/api/setlists", {
-								method: "POST",
-								headers: {
-									"Content-Type": "application/json",
-									"x-artist-id": firebaseUser.uid,
-								},
-								body: JSON.stringify({
-									name: guestSetlist.name || "Guest Setlist",
-									songs: guestSetlist.songs,
-								}),
-							})
-						} else {
-							const { saveSetlist } = await import("./dbService")
-							await saveSetlist(
-								firebaseUser.uid,
-								guestSetlist.songs,
-								null,
-								guestSetlist.name || "Guest Setlist"
-							)
-						}
+						await fetch("/api/setlists", {
+							method: "POST",
+							headers: {
+								"Content-Type": "application/json",
+								"x-artist-id": firebaseUser.uid,
+							},
+							body: JSON.stringify({
+								name: guestSetlist.name || "Guest Setlist",
+								songs: guestSetlist.songs,
+							}),
+						})
 						setGuestSetlist(null)
 					}
 				} catch (e) {
@@ -103,34 +93,38 @@ export const AuthProvider = ({ children }) => {
 		const getData = async () => {
 			if (!user) return
 			try {
-				if (USE_PRISMA_DB) {
-					const { ensureArtist, listSetlistsPg } = await import("./pgService")
-					// Ensure artist row (maps firebase uid)
-					await ensureArtist(user.uid, user.displayName || "Artist")
-					const setlistsPg = await listSetlistsPg(user.uid)
-					setSetlists(setlistsPg)
-					// Songs listing: quick approach fetch all songs for artist
-					const { prisma } = await import("./prismaClient")
-					const songs = await prisma.song.findMany({
-						where: { artistId: user.uid },
-						orderBy: { createdAt: "desc" },
+				// Fetch role and artist mapping
+				try {
+					const me = await fetch("/api/me", {
+						headers: { "x-artist-id": user.uid },
 					})
-					setUserSongs(
-						songs.map((s) => ({
-							id: s.id,
-							name: s.name,
-							artist: s.artistName,
-							spotifyId: s.spotifyId,
-							userTags: s.userTags,
-							notes: s.notes,
-						}))
-					)
-				} else {
-					const tempSetlists = await getSetlists(user.uid)
-					setSetlists(tempSetlists.data)
-					const tempSongs = await getUserSongs(user.uid)
-					setUserSongs(tempSongs.data)
-				}
+					const meJson = await me.json()
+					if (meJson?.user) {
+						setRole(meJson.user.role)
+						setArtistId(meJson.artistId)
+					}
+				} catch {}
+				const { ensureArtist, listSetlistsPg } = await import("./pgService")
+				// Ensure artist row (maps firebase uid)
+				await ensureArtist(user.uid, user.displayName || "Artist")
+				const setlistsPg = await listSetlistsPg(user.uid)
+				setSetlists(setlistsPg)
+				// Fetch songs via API or Prisma directly; keep simple here
+				const { prisma } = await import("./prismaClient")
+				const songs = await prisma.song.findMany({
+					where: { artistId: user.uid },
+					orderBy: { createdAt: "desc" },
+				})
+				setUserSongs(
+					songs.map((s) => ({
+						id: s.id,
+						name: s.name,
+						artist: s.artistName,
+						spotifyId: s.spotifyId,
+						userTags: s.userTags,
+						notes: s.notes,
+					}))
+				)
 			} catch (e) {
 				console.error("Error fetching user data", e)
 			}
@@ -142,24 +136,6 @@ export const AuthProvider = ({ children }) => {
 		try {
 			const result = await signInWithPopup(auth, googleProvider)
 			setUser(result.user)
-
-			// Check or create user in Firestore
-			const userRef = doc(db, "users", result.user.uid)
-			const userSnap = await getDoc(userRef)
-
-			if (!userSnap.exists()) {
-				const userData = {
-					displayName: result.user.displayName,
-					email: result.user.email,
-					createdAt: new Date().toISOString(),
-					userId: result.user.uid,
-				}
-				await setDoc(userRef, userData)
-				console.log("User document created successfully:", result.user.uid)
-			} else {
-				console.log("User document already exists:", result.user.uid)
-			}
-
 			return result.user
 		} catch (error) {
 			throw new Error(error.message)
@@ -181,6 +157,31 @@ export const AuthProvider = ({ children }) => {
 		}
 	}
 
+	const promoteToArtist = async () => {
+		if (!user) throw new Error("Not authenticated")
+		const res = await fetch("/api/artist/promote", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"x-artist-id": user.uid,
+				"x-display-name": user.displayName || "Artist",
+			},
+			body: JSON.stringify({}),
+		})
+		if (!res.ok) throw new Error("Promotion failed")
+		// Refresh role via /api/me
+		try {
+			const me = await fetch("/api/me", {
+				headers: { "x-artist-id": user.uid },
+			})
+			const meJson = await me.json()
+			if (meJson?.user) {
+				setRole(meJson.user.role)
+				setArtistId(meJson.artistId)
+			}
+		} catch {}
+	}
+
 	return (
 		<AuthContext.Provider
 			value={{
@@ -188,9 +189,12 @@ export const AuthProvider = ({ children }) => {
 				setlists,
 				signInWithGoogle,
 				logout,
+				promoteToArtist,
 				loading,
 				setSetlists,
 				userSongs,
+				role,
+				artistId,
 				guestSetlist,
 				setGuestSetlist,
 			}}

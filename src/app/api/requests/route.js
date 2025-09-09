@@ -10,10 +10,13 @@ export async function POST(req) {
 		const firebaseUid = req.headers.get("x-artist-id") || body.artistId
 		if (!firebaseUid)
 			return NextResponse.json({ error: "artistId missing" }, { status: 401 })
-		const { createSongRequestPg, ensureArtist } = await import(
-			"@/lib/pgService"
+		const [{ createSongRequestPg }, { ensureArtistAccess }] = await Promise.all(
+			[import("@/lib/pgService"), import("@/lib/authServer")]
 		)
-		const artist = await ensureArtist(firebaseUid, body.displayName || "Artist")
+		const { artist } = await ensureArtistAccess(
+			firebaseUid,
+			body.displayName || "Artist"
+		)
 		const created = await createSongRequestPg({
 			artistId: artist.id,
 			songId,
@@ -35,8 +38,11 @@ export async function GET(req) {
 			req.headers.get("x-artist-id") || searchParams.get("artistId")
 		if (!firebaseUid)
 			return NextResponse.json({ error: "artistId missing" }, { status: 401 })
-		const { listSongRequestsPg, ensureArtist } = await import("@/lib/pgService")
-		const artist = await ensureArtist(firebaseUid, "Artist")
+		const [{ listSongRequestsPg }, { ensureArtistAccess }] = await Promise.all([
+			import("@/lib/pgService"),
+			import("@/lib/authServer"),
+		])
+		const { artist } = await ensureArtistAccess(firebaseUid, "Artist")
 		const data = await listSongRequestsPg(artist.id, { status })
 		return NextResponse.json({ success: true, data })
 	} catch (e) {

@@ -5,13 +5,16 @@ export async function POST(req) {
 	try {
 		const body = await req.json()
 		const { id = null, name, songs = [] } = body || {}
+
+		const [{ upsertSongs, saveSetlistPg }, { ensureArtistAccess }] =
+			await Promise.all([import("@/lib/pgService"), import("@/lib/authServer")])
 		const firebaseUid = req.headers.get("x-artist-id") || body.artistId
 		if (!firebaseUid)
 			return NextResponse.json({ error: "artistId missing" }, { status: 401 })
-
-		const { upsertSongs, saveSetlistPg, ensureArtist, listSetlistsPg } =
-			await import("@/lib/pgService")
-		const artist = await ensureArtist(firebaseUid, body.displayName || "Artist")
+		const { artist } = await ensureArtistAccess(
+			firebaseUid,
+			body.displayName || "Artist"
+		)
 		const artistId = artist.id
 
 		const pgSongs = (Array.isArray(songs) ? songs : []).map((s) => ({
@@ -34,21 +37,45 @@ export async function POST(req) {
 		})
 		return NextResponse.json({ success: true, data: saved })
 	} catch (e) {
-		return NextResponse.json({ error: e.message }, { status: 400 })
+		return NextResponse.json({ error: e.message }, { status: e.status || 400 })
 	}
 }
 
 // GET /api/setlists -> list setlists for artist
 export async function GET(req) {
 	try {
+		const [{ listSetlistsPg }, { ensureArtistAccess }] = await Promise.all([
+			import("@/lib/pgService"),
+			import("@/lib/authServer"),
+		])
 		const firebaseUid = req.headers.get("x-artist-id")
 		if (!firebaseUid)
 			return NextResponse.json({ error: "artistId missing" }, { status: 401 })
-		const { ensureArtist, listSetlistsPg } = await import("@/lib/pgService")
-		const artist = await ensureArtist(firebaseUid, "Artist")
+		const { artist } = await ensureArtistAccess(firebaseUid, "Artist")
 		const data = await listSetlistsPg(artist.id)
 		return NextResponse.json({ success: true, data })
 	} catch (e) {
-		return NextResponse.json({ error: e.message }, { status: 400 })
+		return NextResponse.json({ error: e.message }, { status: e.status || 400 })
+	}
+}
+
+// DELETE /api/setlists?id=...
+export async function DELETE(req) {
+	try {
+		const { searchParams } = new URL(req.url)
+		const id = searchParams.get("id")
+		const firebaseUid = req.headers.get("x-artist-id")
+		if (!firebaseUid)
+			return NextResponse.json({ error: "artistId missing" }, { status: 401 })
+		if (!id) return NextResponse.json({ error: "id required" }, { status: 400 })
+		const [{ deleteSetlistPg }, { ensureArtistAccess }] = await Promise.all([
+			import("@/lib/pgService"),
+			import("@/lib/authServer"),
+		])
+		const { artist } = await ensureArtistAccess(firebaseUid, "Artist")
+		await deleteSetlistPg(artist.id, id)
+		return NextResponse.json({ success: true })
+	} catch (e) {
+		return NextResponse.json({ error: e.message }, { status: e.status || 400 })
 	}
 }

@@ -8,8 +8,10 @@ import Link from "next/link"
 import SpreadWord from "./SpreadWord"
 import GoogleLogin from "./GoogleLogin"
 import SpotifyLogin from "./SpotifyLogin"
+import { useAuth } from "../lib/AuthContext"
 
 const Header = ({ user, onLogin }) => {
+	const { role } = useAuth() || {}
 	const [spreadWord, setSpreadWord] = useState(false)
 	const [mobileOpen, setMobileOpen] = useState(false)
 	const toggleMobile = () => setMobileOpen((o) => !o)
@@ -44,6 +46,24 @@ const Header = ({ user, onLogin }) => {
 								Dashboard
 							</Link>
 						</li>
+						<li>
+							<Link
+								href="/me"
+								className="px-3 py-1 rounded-full hover:bg-white/10 hover:text-white transition"
+							>
+								Profile
+							</Link>
+						</li>
+						{role === "ARTIST" && (
+							<li>
+								<Link
+									href="/requests"
+									className="px-3 py-1 rounded-full hover:bg-white/10 hover:text-white transition"
+								>
+									Requests
+								</Link>
+							</li>
+						)}
 					</ul>
 				</nav>
 				{/* Right: Auth + toggle */}
@@ -95,6 +115,26 @@ const Header = ({ user, onLogin }) => {
 								Dashboard
 							</Link>
 						</li>
+						<li>
+							<Link
+								href="/me"
+								className="block w-full px-3 py-2 rounded-lg hover:bg-white/10"
+								onClick={() => setMobileOpen(false)}
+							>
+								Profile
+							</Link>
+						</li>
+						{role === "ARTIST" && (
+							<li>
+								<Link
+									href="/requests"
+									className="block w-full px-3 py-2 rounded-lg hover:bg-white/10"
+									onClick={() => setMobileOpen(false)}
+								>
+									Requests
+								</Link>
+							</li>
+						)}
 						<li className="flex flex-col gap-2 pt-3 border-t border-white/10 mt-2">
 							<SpotifyLogin />
 							<GoogleLogin />

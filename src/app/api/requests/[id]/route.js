@@ -9,10 +9,12 @@ export async function PATCH(req, { params }) {
 		const firebaseUid = req.headers.get("x-artist-id") || body.artistId
 		if (!firebaseUid)
 			return NextResponse.json({ error: "artistId missing" }, { status: 401 })
-		const { updateSongRequestStatusPg, ensureArtist } = await import(
-			"@/lib/pgService"
+		const [{ updateSongRequestStatusPg }, { ensureArtistAccess }] =
+			await Promise.all([import("@/lib/pgService"), import("@/lib/authServer")])
+		const { artist } = await ensureArtistAccess(
+			firebaseUid,
+			body.displayName || "Artist"
 		)
-		const artist = await ensureArtist(firebaseUid, body.displayName || "Artist")
 		const updated = await updateSongRequestStatusPg(artist.id, id, status)
 		return NextResponse.json({ success: true, data: updated })
 	} catch (e) {
