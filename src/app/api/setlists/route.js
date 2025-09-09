@@ -17,7 +17,8 @@ export async function POST(req) {
 		)
 		const artistId = artist.id
 
-		const pgSongs = (Array.isArray(songs) ? songs : []).map((s) => ({
+		const incoming = Array.isArray(songs) ? songs : []
+		const pgSongs = incoming.map((s) => ({
 			spotifyId: s.id || s.spotifyId || null,
 			name: s.name,
 			artistName: s.artists?.[0]?.name || s.artist || null,
@@ -28,7 +29,7 @@ export async function POST(req) {
 			userTags: s.userTags || s.tags || [],
 			notes: s.notes || "",
 		}))
-		const inserted = await upsertSongs(artistId, pgSongs)
+		const inserted = incoming.length ? await upsertSongs(artistId, pgSongs) : []
 		const songIds = inserted.map((s) => s.id)
 		const saved = await saveSetlistPg(artistId, {
 			id,
@@ -44,15 +45,22 @@ export async function POST(req) {
 // GET /api/setlists -> list setlists for artist
 export async function GET(req) {
 	try {
-		const [{ listSetlistsPg }, { ensureArtistAccess }] = await Promise.all([
+		const [{ listSetlistsPg, ensureArtist }] = await Promise.all([
 			import("@/lib/pgService"),
-			import("@/lib/authServer"),
 		])
+		const url = new URL(req.url)
+		const artistIdParam = url.searchParams.get("artistId")
 		const firebaseUid = req.headers.get("x-artist-id")
 		if (!firebaseUid)
 			return NextResponse.json({ error: "artistId missing" }, { status: 401 })
-		const { artist } = await ensureArtistAccess(firebaseUid, "Artist")
-		const data = await listSetlistsPg(artist.id)
+		// Resolve the caller's artist via firebase uid
+		const callerArtist = await ensureArtist(firebaseUid, "Artist")
+		const effectiveArtistId = artistIdParam || callerArtist.id
+		// If caller provided an artistId, ensure it matches their own mapping
+		if (artistIdParam && artistIdParam !== callerArtist.id) {
+			return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+		}
+		const data = await listSetlistsPg(effectiveArtistId)
 		return NextResponse.json({ success: true, data })
 	} catch (e) {
 		return NextResponse.json({ error: e.message }, { status: e.status || 400 })

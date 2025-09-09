@@ -6,9 +6,11 @@ const MAX_VISIBLE = 6
 
 const SetlistPreview = ({ setlist, handleDelete, handleSelectSetlist }) => {
 	const [hover, setHover] = useState(false)
-	const songs = setlist.songs || []
+	const songs = Array.isArray(setlist.songs) ? setlist.songs : []
 	const visible = songs.slice(0, MAX_VISIBLE)
-	const remaining = songs.length - visible.length
+	const total =
+		typeof setlist.songCount === "number" ? setlist.songCount : songs.length
+	const remaining = Math.max(0, total - visible.length)
 
 	return (
 		<Paper
@@ -75,7 +77,7 @@ const SetlistPreview = ({ setlist, handleDelete, handleSelectSetlist }) => {
 
 			<div className="flex items-center justify-between px-3 py-2 text-[10px] md:text-xs bg-blue-700/40 border-t border-blue-400/30">
 				<span>
-					{songs.length} song{songs.length !== 1 ? "s" : ""}
+					{total} song{total !== 1 ? "s" : ""}
 				</span>
 				{setlist.lastUpdated && (
 					<span className="italic opacity-70">

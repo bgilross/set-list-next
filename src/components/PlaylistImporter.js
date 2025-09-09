@@ -72,10 +72,8 @@ export default function PlaylistImporter({ onImported, onImportedTracks }) {
 					return {
 						id: t.id,
 						name: t.name,
-						artists: t.artists,
-						album: t.album,
-						duration_ms: t.duration_ms,
-						uri: t.uri,
+						artists: [{ name: t.artists?.[0]?.name }],
+						album: { name: t.album?.name, release_date: t.album?.release_date },
 						userTags: [],
 						notes: "",
 					}

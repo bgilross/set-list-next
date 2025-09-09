@@ -13,47 +13,53 @@ export async function ensureArtist(firebaseUid, displayName) {
 // Upsert songs (array of simplified song objects)
 export async function upsertSongs(artistId, songs) {
 	if (!Array.isArray(songs) || !songs.length) return []
-	const results = []
+	const toInsert = []
 	for (const s of songs) {
-		const { id, spotifyId, name, artistName, album, year, userTags, notes } = s
-		// natural key attempt: spotifyId if present else cuid (create)
-		if (spotifyId) {
-			const existing = await prisma.song.findFirst({
-				where: { artistId, spotifyId },
-			})
-			if (existing) {
-				results.push(
-					await prisma.song.update({
-						where: { id: existing.id },
-						data: {
-							name: name || existing.name,
-							artistName,
-							album,
-							year,
-							userTags,
-							notes,
-						},
-					})
-				)
-				continue
-			}
-		}
-		results.push(
-			await prisma.song.create({
-				data: {
-					artistId,
-					spotifyId: spotifyId || null,
-					name: name || "Untitled",
-					artistName: artistName || null,
-					album: album || null,
-					year: year || null,
-					userTags: userTags || [],
-					notes: notes || null,
-				},
-			})
-		)
+		const { spotifyId, name, artistName, album, year, userTags, notes } = s
+		// Only insert rows with a name; spotifyId may be null
+		toInsert.push({
+			artistId,
+			spotifyId: spotifyId || null,
+			name: name || "Untitled",
+			artistName: artistName || null,
+			album: album || null,
+			year: year || null,
+			userTags: userTags || [],
+			notes: notes || null,
+		})
 	}
-	return results
+	// First, create new ones; skip duplicates by unique (artistId, spotifyId)
+	// Note: createMany doesn't return records
+	await prisma.song.createMany({ data: toInsert, skipDuplicates: true })
+	// Fetch all songs for the provided identifiers
+	const idsFilter = {
+		artistId,
+		OR: [
+			{ spotifyId: { in: songs.map((s) => s.spotifyId).filter(Boolean) } },
+			// For rows without spotifyId, fetch by best-effort name match (optional)
+		],
+	}
+	const fetched = await prisma.song.findMany({ where: idsFilter })
+	// For songs without spotifyId (CSV-only), fetch by (artistId, name) as a fallback
+	const noSpotify = songs.filter((s) => !s.spotifyId)
+	if (noSpotify.length) {
+		const names = Array.from(
+			new Set(noSpotify.map((s) => s.name).filter(Boolean))
+		)
+		const byName = await prisma.song.findMany({
+			where: { artistId, name: { in: names } },
+		})
+		fetched.push(...byName)
+	}
+	// Build map by spotifyId or name
+	const byKey = new Map()
+	for (const r of fetched) {
+		const key = r.spotifyId || `name:${r.name}`
+		if (!byKey.has(key)) byKey.set(key, r)
+	}
+	return songs
+		.map((s) => byKey.get(s.spotifyId || `name:${s.name}`))
+		.filter(Boolean)
 }
 
 // Create or update setlist with ordered songs
@@ -105,17 +111,34 @@ export async function saveSetlistPg(artistId, { id, name, songIds }) {
 	})
 }
 
-export async function listSetlistsPg(artistId) {
+export async function listSetlistsPg(artistId, { previewLimit = 6 } = {}) {
 	const lists = await prisma.setlist.findMany({
 		where: { artistId },
 		orderBy: { updatedAt: "desc" },
-		include: { songs: true },
+		include: {
+			songs: {
+				include: { song: true },
+				orderBy: { position: "asc" },
+				take: previewLimit,
+			},
+			_count: { select: { songs: true } },
+		},
 	})
 	return lists.map((l) => ({
 		id: l.id,
 		name: l.name,
 		isActive: l.isActive,
-		songCount: l.songs.length,
+		songCount: l._count.songs,
+		updatedAt: l.updatedAt,
+		lastUpdated: l.updatedAt,
+		songs: (l.songs || []).map((r) => ({
+			id: r.song.id,
+			name: r.song.name,
+			artist: r.song.artistName,
+			spotifyId: r.song.spotifyId,
+			userTags: r.song.userTags,
+			notes: r.song.notes,
+		})),
 	}))
 }
 

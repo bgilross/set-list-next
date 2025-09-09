@@ -11,6 +11,7 @@ export default function SpotifyImportModal({
 	open,
 	onClose,
 	onImportedTracks,
+	onImportedSetlist,
 }) {
 	return (
 		<BaseModal
@@ -32,7 +33,8 @@ export default function SpotifyImportModal({
 			</div>
 			<div className="overflow-y-auto p-5">
 				<PlaylistImporter
-					onImported={() => {
+					onImported={(newSetlist) => {
+						onImportedSetlist && onImportedSetlist(newSetlist)
 						onClose()
 					}}
 					onImportedTracks={(tracks, name) => {

@@ -30,7 +30,26 @@ const SetlistDisplay = ({ userId, setSongList, onSelectSetlist, onCreate }) => {
 	}
 
 	const handleSelectSetlist = async (setlist) => {
-		const songsRaw = Array.isArray(setlist.songs) ? setlist.songs : []
+		// Fetch full setlist from the server to ensure songs are present
+		let full = null
+		try {
+			const res = await fetch(
+				`/api/setlists/${encodeURIComponent(setlist.id)}`,
+				{
+					headers: { "x-artist-id": userId },
+					cache: "no-store",
+				}
+			)
+			const json = await res.json()
+			if (res.ok && json.success) {
+				full = json.data
+			}
+		} catch {}
+		const songsRaw = Array.isArray(full?.songs)
+			? full.songs
+			: Array.isArray(setlist.songs)
+			? setlist.songs
+			: []
 		// Normalized fallback from stored data (used if Spotify fetch fails or IDs invalid)
 		const fallback = songsRaw.map((s) => {
 			const id = s.spotifyId || s.id || s.trackId || s.spotify_id || ""

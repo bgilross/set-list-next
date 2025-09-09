@@ -73,6 +73,12 @@ export default function Main() {
 					setPlaylistModalOpen(false)
 					if (!createModalOpen) setCreateModalOpen(true)
 				}}
+				onImportedSetlist={(newSetlist) => {
+					if (newSetlist?.id) {
+						setActiveSetlist({ id: newSetlist.id, name: newSetlist.name })
+						if (!createModalOpen) setCreateModalOpen(true)
+					}
+				}}
 			/>
 			<CsvImportModal
 				open={csvModalOpen}

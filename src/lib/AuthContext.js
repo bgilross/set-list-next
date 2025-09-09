@@ -17,6 +17,7 @@ export const AuthProvider = ({ children }) => {
 	const [userSongs, setUserSongs] = useState([])
 	const [role, setRole] = useState(null)
 	const [artistId, setArtistId] = useState(null)
+	const [bootstrapped, setBootstrapped] = useState(false)
 	const [guestSetlist, setGuestSetlist] = useState(() => {
 		if (typeof window === "undefined") return null
 		try {
@@ -88,49 +89,67 @@ export const AuthProvider = ({ children }) => {
 		// guestSetlist included for migration correctness; only triggers when auth state flips or guest changes while logging in
 	}, [guestSetlist])
 
+	// Fast-path: hydrate from localStorage for perceived quick load
+	useEffect(() => {
+		if (typeof window === "undefined") return
+		try {
+			const cached = localStorage.getItem("setlists_cache")
+			if (cached) {
+				const obj = JSON.parse(cached)
+				if (Array.isArray(obj?.data)) setSetlists(obj.data)
+			}
+		} catch {}
+		setBootstrapped(true)
+	}, [])
+
 	// Fetch setlists / songs when user state changes (Firestore or Prisma)
 	useEffect(() => {
 		const getData = async () => {
 			if (!user) return
 			try {
-				// Fetch role and artist mapping
-				try {
-					const me = await fetch("/api/me", {
-						headers: { "x-artist-id": user.uid },
-					})
-					const meJson = await me.json()
-					if (meJson?.user) {
-						setRole(meJson.user.role)
-						setArtistId(meJson.artistId)
-					}
-				} catch {}
-				const { ensureArtist, listSetlistsPg } = await import("./pgService")
-				// Ensure artist row (maps firebase uid)
-				await ensureArtist(user.uid, user.displayName || "Artist")
-				const setlistsPg = await listSetlistsPg(user.uid)
-				setSetlists(setlistsPg)
-				// Fetch songs via API or Prisma directly; keep simple here
-				const { prisma } = await import("./prismaClient")
-				const songs = await prisma.song.findMany({
-					where: { artistId: user.uid },
-					orderBy: { createdAt: "desc" },
-				})
-				setUserSongs(
-					songs.map((s) => ({
-						id: s.id,
-						name: s.name,
-						artist: s.artistName,
-						spotifyId: s.spotifyId,
-						userTags: s.userTags,
-						notes: s.notes,
-					}))
+				// Fetch /api/me and /api/setlists with minimal roundtrips
+				const meHeaders = {
+					"x-artist-id": user.uid,
+					"x-display-name": user.displayName || "Artist",
+				}
+				const mePromise = fetch("/api/me", { headers: meHeaders }).then((r) =>
+					r.json()
 				)
+				// Build setlists request once artistId is known; try optimistic artistId from state if present
+				const listsPromise = (async () => {
+					const q = new URLSearchParams()
+					if (artistId) q.set("artistId", artistId)
+					const res = await fetch(`/api/setlists?${q.toString()}`, {
+						headers: { "x-artist-id": user.uid },
+						cache: "no-store",
+					})
+					return res.json().then((j) => ({ ok: res.ok, ...j }))
+				})()
+				const [meJson, listsJson] = await Promise.all([mePromise, listsPromise])
+				if (meJson?.user) {
+					setRole(meJson.user.role)
+					if (meJson.artistId) setArtistId(meJson.artistId)
+				}
+				if (listsJson.ok && listsJson.success) {
+					setSetlists(listsJson.data || [])
+					// cache for quick subsequent displays
+					try {
+						localStorage.setItem(
+							"setlists_cache",
+							JSON.stringify({ data: listsJson.data, ts: Date.now() })
+						)
+					} catch {}
+				} else {
+					setSetlists([])
+				}
+				// Optional: fetch songs via a server API in future. For now, leave empty to avoid client-side Prisma usage.
+				setUserSongs([])
 			} catch (e) {
 				console.error("Error fetching user data", e)
 			}
 		}
-		if (!loading && user) getData()
-	}, [user, loading])
+		if (!loading && user && bootstrapped) getData()
+	}, [user, loading, artistId, bootstrapped])
 
 	const signInWithGoogle = async () => {
 		try {
