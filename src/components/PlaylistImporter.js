@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import Image from "next/image"
 import { useAuth } from "@/lib/AuthContext"
 import { saveSetlist } from "@/lib/dbService"
+const USE_PRISMA_DB = process.env.NEXT_PUBLIC_USE_PRISMA_DB === 'true'
 
 /* Contract:
  * Shows user's Spotify playlists (paginated), allows selecting one, preview tracks, and import as setlist.
@@ -90,38 +91,54 @@ export default function PlaylistImporter({ onImported, onImportedTracks }) {
 		if (!user || !tracks.length) return
 		setImporting(true)
 		try {
-			const resp = await saveSetlist(
-				user.uid,
-				tracks,
-				null,
-				importName || selected.name
-			)
-			if (resp.success) {
-				// optimistic add
+			if (USE_PRISMA_DB) {
 				const finalName = importName || selected.name
-				const normalizedSongs = tracks.map((t) => ({
-					...t,
-					artist: t.artists?.[0]?.name || t.artist,
-				}))
-				const newSetlist = {
-					id: `temp_${Date.now()}`,
-					name: finalName,
-					songs: normalizedSongs,
-				}
-				setSetlists((prev) => {
-					const exists = prev.find(
-						(s) =>
-							s.name === newSetlist.name &&
-							(s.songs?.length || 0) === newSetlist.songs.length
-					)
-					if (exists) return prev
-					return [newSetlist, ...prev]
+				const res = await fetch('/api/setlists', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json', 'x-artist-id': user.uid },
+					body: JSON.stringify({ name: finalName, songs: tracks })
 				})
+				if (!res.ok) throw new Error('save failed')
+				const json = await res.json()
+				if (!json.success) throw new Error(json.error || 'save failed')
+				const newSetlist = json.data
+				setSetlists((prev) => [newSetlist, ...prev])
 				onImported && onImported(newSetlist)
 				onImportedTracks && onImportedTracks(tracks, finalName)
-				// reset selection
 				setSelected(null)
 				setTracks([])
+			} else {
+				const resp = await saveSetlist(
+					user.uid,
+					tracks,
+					null,
+					importName || selected.name
+				)
+				if (resp.success) {
+					const finalName = importName || selected.name
+					const normalizedSongs = tracks.map((t) => ({
+						...t,
+						artist: t.artists?.[0]?.name || t.artist,
+					}))
+					const newSetlist = {
+						id: `temp_${Date.now()}`,
+						name: finalName,
+						songs: normalizedSongs,
+					}
+					setSetlists((prev) => {
+						const exists = prev.find(
+							(s) =>
+								s.name === newSetlist.name &&
+							(s.songs?.length || 0) === newSetlist.songs.length
+						)
+						if (exists) return prev
+						return [newSetlist, ...prev]
+					})
+					onImported && onImported(newSetlist)
+					onImportedTracks && onImportedTracks(tracks, finalName)
+					setSelected(null)
+					setTracks([])
+				}
 			}
 		} catch (e) {
 			setError(e.message)

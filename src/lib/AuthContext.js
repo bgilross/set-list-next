@@ -5,6 +5,8 @@ import { auth, db, googleProvider } from "./firebaseConfig"
 import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth"
 import { setDoc, doc, getDoc } from "firebase/firestore"
 import { getSetlists, getUserSongs } from "./dbService"
+// Lazy dynamic import of Postgres service when flag enabled
+const USE_PRISMA_DB = process.env.NEXT_PUBLIC_USE_PRISMA_DB === 'true'
 
 const AuthContext = createContext()
 
@@ -42,14 +44,21 @@ export const AuthProvider = ({ children }) => {
 				// Migrate guest setlist after login (fire and forget)
 				try {
 					if (guestSetlist?.songs?.length) {
-						// Save as new setlist for this user
-						const { saveSetlist } = await import("./dbService")
-						await saveSetlist(
-							firebaseUser.uid,
-							guestSetlist.songs,
-							null,
-							guestSetlist.name || "Guest Setlist"
-						)
+						if (USE_PRISMA_DB) {
+							await fetch('/api/setlists', {
+								method: 'POST',
+								headers: { 'Content-Type': 'application/json', 'x-artist-id': firebaseUser.uid },
+								body: JSON.stringify({ name: guestSetlist.name || 'Guest Setlist', songs: guestSetlist.songs })
+							})
+						} else {
+							const { saveSetlist } = await import("./dbService")
+							await saveSetlist(
+								firebaseUser.uid,
+								guestSetlist.songs,
+								null,
+								guestSetlist.name || "Guest Setlist"
+							)
+						}
 						setGuestSetlist(null)
 					}
 				} catch (e) {
@@ -83,27 +92,41 @@ export const AuthProvider = ({ children }) => {
 		// guestSetlist included for migration correctness; only triggers when auth state flips or guest changes while logging in
 	}, [guestSetlist])
 
-	// Fetch setlists when the user state changes
+	// Fetch setlists / songs when user state changes (Firestore or Prisma)
 	useEffect(() => {
 		const getData = async () => {
-			if (!user) return // Ensure user exists before fetching data
-
+			if (!user) return
 			try {
-				const tempSetlists = await getSetlists(user.uid)
-				setSetlists(tempSetlists.data)
-				console.log("getting user Songs: user.uid: ", user.uid)
-				const tempSongs = await getUserSongs(user.uid)
-				console.log("tempSongs: ", tempSongs.data)
-				setUserSongs(tempSongs.data)
-				console.log("Setlists:", tempSetlists.data)
-			} catch (error) {
-				console.error("Error fetching setlists:", error)
+				if (USE_PRISMA_DB) {
+					const { ensureArtist, listSetlistsPg } = await import('./pgService')
+					// Ensure artist row (maps firebase uid)
+					await ensureArtist(user.uid, user.displayName || 'Artist')
+					const setlistsPg = await listSetlistsPg(user.uid)
+					setSetlists(setlistsPg)
+					// Songs listing: quick approach fetch all songs for artist
+					const { prisma } = await import('./prismaClient')
+					const songs = await prisma.song.findMany({ where: { artistId: user.uid }, orderBy: { createdAt: 'desc' } })
+					setUserSongs(
+						songs.map((s) => ({
+							id: s.id,
+							name: s.name,
+							artist: s.artistName,
+							spotifyId: s.spotifyId,
+							userTags: s.userTags,
+							notes: s.notes,
+						}))
+					)
+				} else {
+					const tempSetlists = await getSetlists(user.uid)
+					setSetlists(tempSetlists.data)
+					const tempSongs = await getUserSongs(user.uid)
+					setUserSongs(tempSongs.data)
+				}
+			} catch (e) {
+				console.error('Error fetching user data', e)
 			}
 		}
-
-		if (!loading && user) {
-			getData() // Only fetch setlists if loading is complete and user exists
-		}
+		if (!loading && user) getData()
 	}, [user, loading])
 
 	const signInWithGoogle = async () => {

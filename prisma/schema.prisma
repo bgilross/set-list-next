@@ -1,8 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// Prisma schema for Postgres (Supabase or any provider)
+// Core entities: Artists, Setlists, Songs, SongRequests
+// Generated with support for future tipping & audience sessions.
 
 generator client {
   provider = "prisma-client-js"
@@ -11,11 +9,109 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // Non-pooled connection for migrations/introspection
+}
+
+// --------------------------------------------------
+// ENUMS
+// --------------------------------------------------
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  PLAYED
+  CANCELLED
+}
+
+// --------------------------------------------------
+// MODELS
+// --------------------------------------------------
+model Artist {
+  id           String        @id @default(cuid())
+  firebaseUid  String?       @unique
+  displayName  String
+  slug         String?       @unique
+  publicBlurb  String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  setlists     Setlist[]
+  songs        Song[]
+  requests     SongRequest[]
+}
+
+model Setlist {
+  id         String        @id @default(cuid())
+  artist     Artist        @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  artistId   String
+  name       String
+  isPublic   Boolean       @default(false)
+  isActive   Boolean       @default(false)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  songs      SetlistSong[]
+  requests   SongRequest[]
+
+  @@index([artistId, isActive])
 }
 
 model Song {
-  id  init  @id @default(autoincrement())
-  title String
-  artist String
-  createdAt DateTime @default(now()72107)
+  id          String        @id @default(cuid())
+  artist      Artist        @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  artistId    String
+  spotifyId   String?       @unique
+  name        String
+  artistName  String?       // Display artist (cover / original) if differs from owning artist
+  album       String?
+  year        Int?
+  userTags    String[]      @default([])
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  setlists    SetlistSong[]
+  requests    SongRequest[]
+
+  @@index([artistId])
+  @@index([spotifyId])
 }
+
+// Join table with ordering for songs inside a setlist
+model SetlistSong {
+  setlist    Setlist @relation(fields: [setlistId], references: [id], onDelete: Cascade)
+  setlistId  String
+  song       Song    @relation(fields: [songId], references: [id], onDelete: Cascade)
+  songId     String
+  position   Int
+
+  @@id([setlistId, songId])
+  @@index([setlistId, position])
+}
+
+model SongRequest {
+  id              String        @id @default(cuid())
+  artist          Artist        @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  artistId        String
+  setlist         Setlist?      @relation(fields: [setlistId], references: [id])
+  setlistId       String?
+  song            Song?         @relation(fields: [songId], references: [id])
+  songId          String?
+  rawSongTitle    String?       // Provided when song not in library
+  audienceSession String?       // Anonymous session ID
+  audienceUserId  String?       // Future auth mapping
+  status          RequestStatus @default(PENDING)
+  tipCents        Int?          @default(0)
+  currency        String?       @default("USD")
+  message         String?
+  responseMessage String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([artistId, status])
+  @@index([createdAt])
+}
+
+// --------------------------------------------------
+// NOTES
+// 1. Enforcing single active setlist per artist: do in application or add DB trigger manually.
+// 2. Add foreign key indices automatically handled by Postgres; explicit extra indices included where helpful.
+// 3. For large-scale text search, consider pg_trgm & a materialized search column later.
+// --------------------------------------------------

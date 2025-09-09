@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@mui/material"
 import Input from "./TextInput"
 import { saveSetlist } from "@/lib/dbService"
+const USE_PRISMA_DB = process.env.NEXT_PUBLIC_USE_PRISMA_DB === 'true'
 import ReplaceSongModal from "./modals/ReplaceSongModal"
 import RemoveSongModal from "./modals/RemoveSongModal"
 import { useAuth } from "@/lib/AuthContext"
@@ -50,30 +51,45 @@ const TableDisplay = ({
 		setSaving(true)
 		setSaveStatus("saving")
 		try {
-			const result = await saveSetlist(
-				user.uid,
-				songList,
-				activeSetlist?.id || null,
-				activeSetlist ? activeSetlist.name : setlistName
-			)
-			if (result.success) {
-				push(activeSetlist ? "Setlist updated" : "Setlist saved", {
-					type: "success",
-				})
-				setSaveStatus("success")
-				// Auto clear success badge after 2s if modal stays open
-				if (activeSetlist) {
-					setTimeout(() => {
-						setSaveStatus("idle")
-					}, 2000)
+				if (USE_PRISMA_DB) {
+					const res = await fetch('/api/setlists', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json', 'x-artist-id': user.uid },
+						body: JSON.stringify({ id: activeSetlist?.id || null, name: activeSetlist ? activeSetlist.name : setlistName, songs: songList })
+					})
+					if (!res.ok) throw new Error('save failed')
+					const json = await res.json()
+					if (json.success) {
+						push(activeSetlist ? "Setlist updated" : "Setlist saved", { type: "success" })
+						setSaveStatus("success")
+						if (activeSetlist) {
+							setTimeout(() => setSaveStatus("idle"), 2000)
+						}
+						onSaved && onSaved()
+					} else {
+						throw new Error(json.error || 'save failed')
+					}
+				} else {
+					const result = await saveSetlist(
+						user.uid,
+						songList,
+						activeSetlist?.id || null,
+						activeSetlist ? activeSetlist.name : setlistName
+					)
+					if (result.success) {
+						push(activeSetlist ? "Setlist updated" : "Setlist saved", { type: "success" })
+						setSaveStatus("success")
+						if (activeSetlist) {
+							setTimeout(() => setSaveStatus("idle"), 2000)
+						}
+						onSaved && onSaved()
+					} else {
+						push("Error saving setlist", { type: "error" })
+						setSaveStatus("error")
+						setTimeout(() => setSaveStatus("idle"), 2500)
+					}
 				}
-				onSaved && onSaved()
-			} else {
-				push("Error saving setlist", { type: "error" })
-				setSaveStatus("error")
-				setTimeout(() => setSaveStatus("idle"), 2500)
-			}
-		} catch (e) {
+			} catch (e) {
 			push("Error saving setlist", { type: "error" })
 			setSaveStatus("error")
 			setTimeout(() => setSaveStatus("idle"), 2500)
