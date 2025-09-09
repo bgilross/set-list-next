@@ -22,11 +22,11 @@ export function ToastProvider({ children }) {
 	return (
 		<ToastContext.Provider value={{ push }}>
 			{children}
-			<div className="fixed bottom-4 right-4 flex flex-col gap-2 z-50">
+			<div className="fixed top-20 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-[60] w-full px-4 pointer-events-none">
 				{toasts.map((t) => (
 					<div
 						key={t.id}
-						className={`px-4 py-2 rounded-lg shadow text-sm font-medium text-blue-950 animate-fade-in-down bg-gradient-to-r ${
+						className={`pointer-events-auto px-4 py-2 rounded-lg shadow text-sm font-medium text-blue-950 animate-fade-in-down bg-gradient-to-r ${
 							t.type === "error"
 								? "from-red-400 to-red-500"
 								: t.type === "success"

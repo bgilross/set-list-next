@@ -128,6 +128,7 @@ export async function listSetlistsPg(artistId, { previewLimit = 6 } = {}) {
 		id: l.id,
 		name: l.name,
 		isActive: l.isActive,
+		isPublic: l.isPublic,
 		songCount: l._count.songs,
 		updatedAt: l.updatedAt,
 		lastUpdated: l.updatedAt,
@@ -140,6 +141,41 @@ export async function listSetlistsPg(artistId, { previewLimit = 6 } = {}) {
 			notes: r.song.notes,
 		})),
 	}))
+}
+
+// Toggle a setlist's public/active status, ensuring only one active per artist
+export async function setSetlistStatusPg(
+	artistId,
+	setlistId,
+	{ isPublic, isActive }
+) {
+	if (!artistId || !setlistId)
+		throw new Error("artistId and setlistId required")
+	return prisma.$transaction(async (tx) => {
+		const current = await tx.setlist.findFirst({
+			where: { id: setlistId, artistId },
+		})
+		if (!current) throw new Error("Setlist not found")
+		const updates = {}
+		if (typeof isPublic === "boolean") updates.isPublic = isPublic
+		if (typeof isActive === "boolean") updates.isActive = isActive
+		if (updates.isActive === true) {
+			// Deactivate others
+			await tx.setlist.updateMany({
+				where: { artistId, isActive: true },
+				data: { isActive: false },
+			})
+		}
+		const updated = await tx.setlist.update({
+			where: { id: setlistId },
+			data: updates,
+		})
+		return {
+			id: updated.id,
+			isPublic: updated.isPublic,
+			isActive: updated.isActive,
+		}
+	})
 }
 
 export async function getSetlistPg(artistId, setlistId) {

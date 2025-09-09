@@ -14,6 +14,11 @@ const nextConfig = {
 				protocol: "https",
 				hostname: "seeded-session-images.scdn.co",
 			},
+			// Allow Google Chart API for QR codes on the Profile page
+			{
+				protocol: "https",
+				hostname: "chart.googleapis.com",
+			},
 		],
 	},
 }

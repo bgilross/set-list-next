@@ -1,11 +1,21 @@
 import { Paper } from "@mui/material"
 import ScrollableText from "./ScrollableText"
 import { useState } from "react"
+import { useToast } from "@/lib/ToastContext"
 
 const MAX_VISIBLE = 6
 
-const SetlistPreview = ({ setlist, handleDelete, handleSelectSetlist }) => {
+const SetlistPreview = ({
+	setlist,
+	handleDelete,
+	handleSelectSetlist,
+	onStatusChange,
+	userId,
+}) => {
 	const [hover, setHover] = useState(false)
+	const { push } = useToast()
+	const [actingActive, setActingActive] = useState(false)
+	const [actingPublic, setActingPublic] = useState(false)
 	const songs = Array.isArray(setlist.songs) ? setlist.songs : []
 	const visible = songs.slice(0, MAX_VISIBLE)
 	const total =
@@ -18,8 +28,14 @@ const SetlistPreview = ({ setlist, handleDelete, handleSelectSetlist }) => {
 			onClick={() => handleSelectSetlist(setlist)}
 			onMouseEnter={() => setHover(true)}
 			onMouseLeave={() => setHover(false)}
-			className={`group relative flex flex-col rounded-2xl border border-blue-300/40 bg-gradient-to-br from-blue-500 to-blue-600 text-green-100 shadow-lg transition-all duration-300 hover:shadow-2xl cursor-pointer overflow-hidden ${
-				hover ? "ring-2 ring-green-200/60 scale-[1.015]" : ""
+			className={`group relative flex flex-col rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-green-100 shadow-lg transition-all duration-300 hover:shadow-2xl cursor-pointer overflow-hidden ${
+				setlist.isActive
+					? "border-2 border-emerald-400 shadow-[0_0_0_3px_rgba(16,185,129,0.25)]"
+					: "border border-blue-300/40"
+			} ${
+				hover && !setlist.isActive
+					? "ring-2 ring-green-200/60 scale-[1.015]"
+					: ""
 			}`}
 		>
 			<div className="flex items-center justify-between px-4 py-3 bg-blue-600/40 backdrop-blur-sm">
@@ -39,7 +55,100 @@ const SetlistPreview = ({ setlist, handleDelete, handleSelectSetlist }) => {
 				</button>
 			</div>
 
-			<div className="flex flex-col gap-0.5 px-3 pt-2 pb-3 bg-green-50/10">
+			<div className="flex items-center justify-between gap-2 px-3 pt-2 pb-1">
+				<div className="flex items-center gap-2 text-[10px]">
+					{setlist.isActive && (
+						<span className="px-2 py-0.5 rounded-full bg-green-500/80 text-white font-bold">
+							Active
+						</span>
+					)}
+					{setlist.isPublic && (
+						<span className="px-2 py-0.5 rounded-full bg-blue-500/80 text-white font-bold">
+							Public
+						</span>
+					)}
+				</div>
+				<div className="flex items-center gap-2">
+					<button
+						type="button"
+						disabled={setlist.isActive || actingActive}
+						onClick={async (e) => {
+							e.stopPropagation()
+							if (setlist.isActive) return
+							setActingActive(true)
+							try {
+								const res = await fetch("/api/setlists/status", {
+									method: "PATCH",
+									headers: {
+										"Content-Type": "application/json",
+										"x-artist-id": userId,
+									},
+									body: JSON.stringify({ id: setlist.id, isActive: true }),
+								})
+								const j = await res.json()
+								if (res.ok && j.success) {
+									onStatusChange &&
+										onStatusChange(setlist.id, { isActive: true })
+									push("Setlist set as Active", { type: "success" })
+								} else {
+									push(j.error || "Failed to set active", { type: "error" })
+								}
+							} catch (e) {
+								push("Failed to set active", { type: "error" })
+							} finally {
+								setActingActive(false)
+							}
+						}}
+						className="text-[10px] px-2 py-1 rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-green-700"
+						title={setlist.isActive ? "Already Active" : "Set as Active"}
+					>
+						{setlist.isActive ? "Active" : actingActive ? "Setting…" : "Active"}
+					</button>
+					<button
+						type="button"
+						disabled={actingPublic}
+						onClick={async (e) => {
+							e.stopPropagation()
+							setActingPublic(true)
+							try {
+								const next = !setlist.isPublic
+								const res = await fetch("/api/setlists/status", {
+									method: "PATCH",
+									headers: {
+										"Content-Type": "application/json",
+										"x-artist-id": userId,
+									},
+									body: JSON.stringify({ id: setlist.id, isPublic: next }),
+								})
+								const j = await res.json()
+								if (res.ok && j.success) {
+									onStatusChange &&
+										onStatusChange(setlist.id, { isPublic: next })
+									push(next ? "Setlist published" : "Setlist unpublished", {
+										type: "success",
+									})
+								} else {
+									push(j.error || "Failed to update", { type: "error" })
+								}
+							} catch (e) {
+								push("Failed to update", { type: "error" })
+							} finally {
+								setActingPublic(false)
+							}
+						}}
+						className="text-[10px] px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
+						title="Toggle Public"
+					>
+						{actingPublic
+							? "Saving…"
+							: setlist.isPublic
+							? "Unpublish"
+							: "Publish"}
+					</button>
+				</div>
+			</div>
+
+			<div className="flex flex-col gap-0.5 px-3 pt-1 pb-3 bg-green-50/10">
 				{visible.length === 0 && (
 					<div className="text-xs italic text-green-200/70 py-4 text-center">
 						No songs yet

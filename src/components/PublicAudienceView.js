@@ -1,11 +1,18 @@
 "use client"
 import { useEffect, useState, useMemo } from "react"
+import { useToast } from "@/lib/ToastContext"
 
-// TODO: Build a Prisma-backed slug resolver and audience setlist fetcher.
-// For now, expect the slug to be the artist's display slug and use a server lookup route when added.
 async function resolveSlug(slug) {
-	// Placeholder – no Firebase. Implement via /api/audience/slug in a future step.
-	return null
+	try {
+		const res = await fetch(`/api/audience/slug/${encodeURIComponent(slug)}`, {
+			cache: "no-store",
+		})
+		const json = await res.json()
+		if (res.ok && json.success) return json.data
+		return null
+	} catch {
+		return null
+	}
 }
 
 export default function PublicAudienceView({ slug }) {
@@ -15,6 +22,7 @@ export default function PublicAudienceView({ slug }) {
 	const [setlistDoc, setSetlistDoc] = useState(null)
 	const [filter, setFilter] = useState("")
 	const [status, setStatus] = useState("loading")
+	const { push } = useToast()
 
 	// Bootstrap: resolve slug, then attach listeners
 	useEffect(() => {
@@ -27,8 +35,22 @@ export default function PublicAudienceView({ slug }) {
 			}
 			setArtistId(resolved.artistId)
 			setActiveSetlistId(resolved.activeSetlistId)
+			setProfile(resolved.profile || null)
 
-			// Firebase removed. Wire up Prisma-backed audience API soon.
+			// Load the active setlist if available
+			if (resolved.activeSetlistId) {
+				try {
+					const r = await fetch(
+						`/api/setlists/${encodeURIComponent(resolved.activeSetlistId)}`,
+						{
+							headers: { "x-artist-id": resolved.artistId },
+							cache: "no-store",
+						}
+					)
+					const j = await r.json()
+					if (r.ok && j.success) setSetlistDoc(j.data)
+				} catch {}
+			}
 			setStatus("ready")
 			return () => {}
 		})()
@@ -120,9 +142,9 @@ export default function PublicAudienceView({ slug }) {
 											}),
 										})
 										if (!res.ok) throw new Error("request failed")
-										alert("Request sent!")
+										push("Request sent", { type: "success" })
 									} catch (e) {
-										alert("Could not send request")
+										push("Could not send request", { type: "error" })
 									}
 								}}
 							>

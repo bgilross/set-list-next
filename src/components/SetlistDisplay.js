@@ -4,9 +4,11 @@ import React, { useMemo, useState } from "react"
 import { useAuth } from "@/lib/AuthContext"
 import SetlistPreview from "./SetlistPreview"
 import { getSongsByIds } from "@/lib/logic"
+import { useToast } from "@/lib/ToastContext"
 const SetlistDisplay = ({ userId, setSongList, onSelectSetlist, onCreate }) => {
 	const [collapsed, setCollapsed] = useState(true)
-	const { setlists, setSetlists, userSongs } = useAuth()
+	const { setlists, setSetlists, userSongs, role, user } = useAuth()
+	const { push } = useToast()
 	// Removed interactive sorting; default ordering will be Updated DESC only.
 
 	const handleDelete = async (setlistId) => {
@@ -21,11 +23,12 @@ const SetlistDisplay = ({ userId, setSongList, onSelectSetlist, onCreate }) => {
 			const json = await res.json()
 			if (res.ok && json.success) {
 				setSetlists(setlists.filter((s) => s.id !== setlistId))
+				push("Setlist deleted", { type: "success" })
 			} else {
-				console.error("Failed to delete setlist:", json.error)
+				push(json.error || "Failed to delete setlist", { type: "error" })
 			}
 		} catch (e) {
-			console.error("Failed to delete setlist:", e)
+			push("Failed to delete setlist", { type: "error" })
 		}
 	}
 
@@ -133,6 +136,34 @@ const SetlistDisplay = ({ userId, setSongList, onSelectSetlist, onCreate }) => {
 			)
 	}, [setlists])
 
+	const viewAudience = async () => {
+		try {
+			const res = await fetch("/api/artist", {
+				headers: {
+					"x-artist-id": userId,
+					"x-display-name": user?.displayName || "Artist",
+				},
+				cache: "no-store",
+			})
+			const json = await res.json()
+			const slug = json?.artist?.slug
+			if (res.ok && slug) {
+				const url = `/a/${slug}`
+				window.open(url, "_blank", "noopener")
+			} else {
+				push("Set your public slug in Profile to view audience page", {
+					type: "info",
+				})
+				// Help user get there quickly
+				setTimeout(() => {
+					window.location.href = "/me"
+				}, 300)
+			}
+		} catch {
+			push("Could not load artist settings", { type: "error" })
+		}
+	}
+
 	if (!userId)
 		return <div className="text-sm text-red-600">User not found.</div>
 	if (!setlists)
@@ -145,7 +176,7 @@ const SetlistDisplay = ({ userId, setSongList, onSelectSetlist, onCreate }) => {
 					role="button"
 					aria-expanded={!collapsed}
 					aria-controls="setlist-grid"
-					abIndex={0}
+					tabIndex={0}
 					onClick={() => {
 						if (processed.length > 0) setCollapsed((c) => !c)
 					}}
@@ -177,6 +208,15 @@ const SetlistDisplay = ({ userId, setSongList, onSelectSetlist, onCreate }) => {
 					>
 						Create New Setlist
 					</button>
+					{role === "ARTIST" && (
+						<button
+							onClick={viewAudience}
+							className="px-3 py-2 rounded-lg bg-blue-200 hover:bg-blue-300 text-blue-800 text-xs font-semibold"
+							title="Open your public audience page"
+						>
+							View Audience
+						</button>
+					)}
 					{processed.length > 0 && (
 						<button
 							onClick={() => setCollapsed((c) => !c)}
@@ -210,6 +250,21 @@ const SetlistDisplay = ({ userId, setSongList, onSelectSetlist, onCreate }) => {
 								setlist={setlist}
 								handleDelete={handleDelete}
 								handleSelectSetlist={handleSelectSetlist}
+								onStatusChange={(id, changes) => {
+									// Update local state: apply toggle, handle single-active effect
+									setSetlists((prev) => {
+										const next = prev.map((s) =>
+											s.id === id ? { ...s, ...changes } : s
+										)
+										if (changes.isActive) {
+											for (const s of next) {
+												if (s.id !== id) s.isActive = false
+											}
+										}
+										return next
+									})
+								}}
+								userId={userId}
 							/>
 						</li>
 					))}

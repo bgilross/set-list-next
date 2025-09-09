@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import { useAuth } from "@/lib/AuthContext"
+import { useToast } from "@/lib/ToastContext"
 // Removed dbService import
 const USE_PRISMA_DB = process.env.NEXT_PUBLIC_USE_PRISMA_DB === "true"
 
@@ -10,6 +11,7 @@ const USE_PRISMA_DB = process.env.NEXT_PUBLIC_USE_PRISMA_DB === "true"
  */
 export default function PlaylistImporter({ onImported, onImportedTracks }) {
 	const { user, setlists, setSetlists } = useAuth()
+	const { push } = useToast()
 	const [playlists, setPlaylists] = useState([])
 	const [loading, setLoading] = useState(false)
 	const [error, setError] = useState(null)
@@ -106,6 +108,7 @@ export default function PlaylistImporter({ onImported, onImportedTracks }) {
 				setSetlists((prev) => [newSetlist, ...prev])
 				onImported && onImported(newSetlist)
 				onImportedTracks && onImportedTracks(tracks, finalName)
+				push("Setlist imported", { type: "success" })
 				setSelected(null)
 				setTracks([])
 			} else {
@@ -114,6 +117,7 @@ export default function PlaylistImporter({ onImported, onImportedTracks }) {
 			}
 		} catch (e) {
 			setError(e.message)
+			push(e.message || "Import failed", { type: "error" })
 		} finally {
 			setImporting(false)
 		}
