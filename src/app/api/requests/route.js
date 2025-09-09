@@ -7,18 +7,28 @@ export async function POST(req) {
 		const { songId, rawTitle, setlistId } = body || {}
 		// Derive artist from authenticated user (Firebase) - placeholder: expect header x-artist-id for now
 		// TODO: integrate proper auth once middleware established
+		const artistGuid = req.headers.get("x-artist-guid") || body.artistGuid
 		const firebaseUid = req.headers.get("x-artist-id") || body.artistId
-		if (!firebaseUid)
-			return NextResponse.json({ error: "artistId missing" }, { status: 401 })
+		if (!artistGuid && !firebaseUid)
+			return NextResponse.json(
+				{ error: "artist identifier missing" },
+				{ status: 401 }
+			)
 		const [{ createSongRequestPg }, { ensureArtistAccess }] = await Promise.all(
 			[import("@/lib/pgService"), import("@/lib/authServer")]
 		)
-		const { artist } = await ensureArtistAccess(
-			firebaseUid,
-			body.displayName || "Artist"
-		)
+		let artistId
+		if (artistGuid) {
+			artistId = artistGuid
+		} else {
+			const { artist } = await ensureArtistAccess(
+				firebaseUid,
+				body.displayName || "Artist"
+			)
+			artistId = artist.id
+		}
 		const created = await createSongRequestPg({
-			artistId: artist.id,
+			artistId,
 			songId,
 			rawTitle,
 			setlistId,

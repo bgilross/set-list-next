@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useState, useMemo } from "react"
 import { useToast } from "@/lib/ToastContext"
+import SortableTable from "@/components/SortableTable"
 
 async function resolveSlug(slug) {
 	try {
@@ -24,7 +25,6 @@ export default function PublicAudienceView({ slug }) {
 	const [status, setStatus] = useState("loading")
 	const { push } = useToast()
 
-	// Bootstrap: resolve slug, then attach listeners
 	useEffect(() => {
 		;(async () => {
 			setStatus("loading")
@@ -37,13 +37,12 @@ export default function PublicAudienceView({ slug }) {
 			setActiveSetlistId(resolved.activeSetlistId)
 			setProfile(resolved.profile || null)
 
-			// Load the active setlist if available
 			if (resolved.activeSetlistId) {
 				try {
 					const r = await fetch(
 						`/api/setlists/${encodeURIComponent(resolved.activeSetlistId)}`,
 						{
-							headers: { "x-artist-id": resolved.artistId },
+							headers: { "x-artist-guid": resolved.artistId },
 							cache: "no-store",
 						}
 					)
@@ -52,7 +51,6 @@ export default function PublicAudienceView({ slug }) {
 				} catch {}
 			}
 			setStatus("ready")
-			return () => {}
 		})()
 	}, [slug])
 
@@ -90,6 +88,11 @@ export default function PublicAudienceView({ slug }) {
 							Current Setlist: {setlistDoc.name}
 						</p>
 					)}
+					{!activeSetlistId && (
+						<p className="mt-2 text-xs text-gray-500">
+							No active setlist right now.
+						</p>
+					)}
 				</div>
 			</header>
 
@@ -111,48 +114,87 @@ export default function PublicAudienceView({ slug }) {
 					No songs in this setlist.
 				</div>
 			) : (
-				<ul className="divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white overflow-hidden">
-					{songs.map((s) => (
-						<li
-							key={s.spotifyId || s.id}
-							className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-blue-50 transition"
-						>
-							<div className="min-w-0">
-								<p className="font-medium text-gray-900 truncate">
-									{s.name || "Untitled"}
-								</p>
-								<p className="text-xs text-gray-500">
-									{s.artist || s.artists?.[0]?.name || ""}
-								</p>
-							</div>
-							<button
-								className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full bg-green-600 text-white hover:bg-green-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
-								onClick={async () => {
-									try {
-										// Create request targeting this song; using artistId from resolved slug
-										const res = await fetch("/api/requests", {
-											method: "POST",
-											headers: {
-												"Content-Type": "application/json",
-												"x-artist-id": artistId,
-											},
-											body: JSON.stringify({
-												rawTitle: s.name,
-												setlistId: activeSetlistId,
-											}),
-										})
-										if (!res.ok) throw new Error("request failed")
-										push("Request sent", { type: "success" })
-									} catch (e) {
-										push("Could not send request", { type: "error" })
-									}
-								}}
-							>
-								Request
-							</button>
-						</li>
-					))}
-				</ul>
+				<div className="rounded-lg overflow-hidden border border-gray-200">
+					<SortableTable
+						data={songs}
+						keyFn={(row) => row.spotifyId || row.id}
+						config={[
+							{
+								label: "Song",
+								render: (row) => (
+									<div className="min-w-0">
+										<div className="font-medium text-gray-900 truncate">
+											{row.name || "Untitled"}
+										</div>
+									</div>
+								),
+								sortValue: (row) => row.name?.toLowerCase() || "",
+							},
+							{
+								label: "Artist",
+								render: (row) => (
+									<span className="text-sm text-gray-700">
+										{row.artist || row.artists?.[0]?.name || ""}
+									</span>
+								),
+								sortValue: (row) =>
+									(row.artist || row.artists?.[0]?.name || "").toLowerCase(),
+							},
+							{
+								label: "Album",
+								render: (row) => (
+									<span className="text-sm text-gray-600">
+										{row.album || ""}
+									</span>
+								),
+								sortValue: (row) => (row.album || "").toLowerCase(),
+							},
+							{
+								label: "Year",
+								render: (row) => (
+									<span className="text-sm text-gray-600">
+										{row.year || ""}
+									</span>
+								),
+								sortValue: (row) => row.year || 0,
+							},
+							{
+								label: "",
+								render: (row) => (
+									<button
+										className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full bg-green-600 text-white hover:bg-green-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+										onClick={async () => {
+											try {
+												const res = await fetch("/api/requests", {
+													method: "POST",
+													headers: {
+														"Content-Type": "application/json",
+														"x-artist-guid": artistId,
+													},
+													body: JSON.stringify({
+														rawTitle: row.name,
+														setlistId: activeSetlistId,
+													}),
+												})
+												if (!res.ok) throw new Error("request failed")
+												push("Request sent", { type: "success" })
+											} catch (e) {
+												push("Could not send request", { type: "error" })
+											}
+										}}
+									>
+										Request
+									</button>
+								),
+							},
+						]}
+						headerRowClassName="bg-blue-600 text-green-50"
+						tableClassName="bg-white"
+						sortedHeadersClassName="cursor-pointer select-none hover:bg-blue-500/80 transition-colors"
+						iconClassName="mr-1 text-green-100"
+						rowsClassName="p-2"
+					/>
+				</div>
 			)}
 
 			<footer className="pt-4 text-center text-[10px] text-gray-400">
