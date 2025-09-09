@@ -3,7 +3,7 @@ import { useEffect, useState } from "react"
 import Image from "next/image"
 import { useAuth } from "@/lib/AuthContext"
 import { saveSetlist } from "@/lib/dbService"
-const USE_PRISMA_DB = process.env.NEXT_PUBLIC_USE_PRISMA_DB === 'true'
+const USE_PRISMA_DB = process.env.NEXT_PUBLIC_USE_PRISMA_DB === "true"
 
 /* Contract:
  * Shows user's Spotify playlists (paginated), allows selecting one, preview tracks, and import as setlist.
@@ -93,14 +93,17 @@ export default function PlaylistImporter({ onImported, onImportedTracks }) {
 		try {
 			if (USE_PRISMA_DB) {
 				const finalName = importName || selected.name
-				const res = await fetch('/api/setlists', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json', 'x-artist-id': user.uid },
-					body: JSON.stringify({ name: finalName, songs: tracks })
+				const res = await fetch("/api/setlists", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"x-artist-id": user.uid,
+					},
+					body: JSON.stringify({ name: finalName, songs: tracks }),
 				})
-				if (!res.ok) throw new Error('save failed')
+				if (!res.ok) throw new Error("save failed")
 				const json = await res.json()
-				if (!json.success) throw new Error(json.error || 'save failed')
+				if (!json.success) throw new Error(json.error || "save failed")
 				const newSetlist = json.data
 				setSetlists((prev) => [newSetlist, ...prev])
 				onImported && onImported(newSetlist)
@@ -129,7 +132,7 @@ export default function PlaylistImporter({ onImported, onImportedTracks }) {
 						const exists = prev.find(
 							(s) =>
 								s.name === newSetlist.name &&
-							(s.songs?.length || 0) === newSetlist.songs.length
+								(s.songs?.length || 0) === newSetlist.songs.length
 						)
 						if (exists) return prev
 						return [newSetlist, ...prev]

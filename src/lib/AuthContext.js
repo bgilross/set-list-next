@@ -6,7 +6,7 @@ import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth"
 import { setDoc, doc, getDoc } from "firebase/firestore"
 import { getSetlists, getUserSongs } from "./dbService"
 // Lazy dynamic import of Postgres service when flag enabled
-const USE_PRISMA_DB = process.env.NEXT_PUBLIC_USE_PRISMA_DB === 'true'
+const USE_PRISMA_DB = process.env.NEXT_PUBLIC_USE_PRISMA_DB === "true"
 
 const AuthContext = createContext()
 
@@ -45,10 +45,16 @@ export const AuthProvider = ({ children }) => {
 				try {
 					if (guestSetlist?.songs?.length) {
 						if (USE_PRISMA_DB) {
-							await fetch('/api/setlists', {
-								method: 'POST',
-								headers: { 'Content-Type': 'application/json', 'x-artist-id': firebaseUser.uid },
-								body: JSON.stringify({ name: guestSetlist.name || 'Guest Setlist', songs: guestSetlist.songs })
+							await fetch("/api/setlists", {
+								method: "POST",
+								headers: {
+									"Content-Type": "application/json",
+									"x-artist-id": firebaseUser.uid,
+								},
+								body: JSON.stringify({
+									name: guestSetlist.name || "Guest Setlist",
+									songs: guestSetlist.songs,
+								}),
 							})
 						} else {
 							const { saveSetlist } = await import("./dbService")
@@ -98,14 +104,17 @@ export const AuthProvider = ({ children }) => {
 			if (!user) return
 			try {
 				if (USE_PRISMA_DB) {
-					const { ensureArtist, listSetlistsPg } = await import('./pgService')
+					const { ensureArtist, listSetlistsPg } = await import("./pgService")
 					// Ensure artist row (maps firebase uid)
-					await ensureArtist(user.uid, user.displayName || 'Artist')
+					await ensureArtist(user.uid, user.displayName || "Artist")
 					const setlistsPg = await listSetlistsPg(user.uid)
 					setSetlists(setlistsPg)
 					// Songs listing: quick approach fetch all songs for artist
-					const { prisma } = await import('./prismaClient')
-					const songs = await prisma.song.findMany({ where: { artistId: user.uid }, orderBy: { createdAt: 'desc' } })
+					const { prisma } = await import("./prismaClient")
+					const songs = await prisma.song.findMany({
+						where: { artistId: user.uid },
+						orderBy: { createdAt: "desc" },
+					})
 					setUserSongs(
 						songs.map((s) => ({
 							id: s.id,
@@ -123,7 +132,7 @@ export const AuthProvider = ({ children }) => {
 					setUserSongs(tempSongs.data)
 				}
 			} catch (e) {
-				console.error('Error fetching user data', e)
+				console.error("Error fetching user data", e)
 			}
 		}
 		if (!loading && user) getData()
