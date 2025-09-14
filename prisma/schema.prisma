@@ -30,6 +30,20 @@ enum UserRole {
   ADMIN
 }
 
+// Sender & message type enums for the messaging system
+enum SenderType {
+  ARTIST
+  AUDIENCE
+  SYSTEM
+}
+
+enum MessageType {
+  TEXT
+  ACTION
+  TIP
+  SYSTEM
+}
+
 // --------------------------------------------------
 // MODELS
 // --------------------------------------------------
@@ -54,6 +68,7 @@ model Artist {
   setlists     Setlist[]
   songs        Song[]
   requests     SongRequest[]
+  events       Event[]
 }
 
 model Setlist {
@@ -67,6 +82,7 @@ model Setlist {
   updatedAt  DateTime      @updatedAt
   songs      SetlistSong[]
   requests   SongRequest[]
+  events     Event[]
 
   @@index([artistId, isActive])
 }
@@ -125,6 +141,48 @@ model SongRequest {
 
   @@index([artistId, status])
   @@index([createdAt])
+}
+
+// Events represent artist sessions (e.g., a gig) where a specific setlist is active
+model Event {
+  id         String    @id @default(cuid())
+  artist     Artist    @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  artistId   String
+  name       String
+  setlist    Setlist?  @relation(fields: [setlistId], references: [id])
+  setlistId  String?
+  isLive     Boolean   @default(false)
+  startsAt   DateTime?
+  endsAt     DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  threads    EventThread[]
+
+  @@index([artistId, isLive])
+}
+
+// A thread for all messages related to an Event (single chat per event)
+model EventThread {
+  id        String    @id @default(cuid())
+  event     Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId   String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  messages  Message[]
+}
+
+model Message {
+  id         String      @id @default(cuid())
+  thread     EventThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  threadId   String
+  senderId   String?     // nullable for system messages
+  senderType SenderType
+  type       MessageType @default(TEXT)
+  content    String?
+  meta       Json?
+  createdAt  DateTime    @default(now())
+
+  @@index([threadId, createdAt])
 }
 
 // --------------------------------------------------
