@@ -1,40 +1,54 @@
 "use client"
 import React, { useEffect, useState, useRef } from "react"
 import { useAuth } from "@/lib/AuthContext"
+import { supabase } from "@/lib/supabaseClient"
 
 export default function RequestChat({ eventId }) {
 	const { user } = useAuth()
 	const [messages, setMessages] = useState([])
 	const [text, setText] = useState("")
-	const polling = useRef(null)
-
-	const fetchMessages = async () => {
-		try {
-			const res = await fetch(`/api/events/${eventId}/messages`)
-			const data = await res.json()
-			setMessages(data)
-		} catch (e) {
-			console.error(e)
-		}
-	}
+	const threadIdRef = useRef(null)
 
 	useEffect(() => {
 		if (!eventId) return
 		let mounted = true
-		const doFetch = async () => {
+
+		// initial load
+		const init = async () => {
 			try {
 				const res = await fetch(`/api/events/${eventId}/messages`)
 				const data = await res.json()
-				if (mounted) setMessages(data)
+				if (!mounted) return
+				setMessages(data)
+				if (data.length) threadIdRef.current = data[0].threadId
 			} catch (e) {
 				console.error(e)
 			}
 		}
-		doFetch()
-		polling.current = setInterval(doFetch, 3000)
+		init()
+
+		// Subscribe to Supabase realtime inserts on Message
+		const channel = supabase
+			.channel(`public:Message:event:${eventId}`)
+			.on(
+				"postgres_changes",
+				{ event: "INSERT", schema: "public", table: "Message" },
+				(payload) => {
+					const newMsg = payload.new
+					// If threadId is known, filter; otherwise accept and rely on dedupe
+					if (threadIdRef.current && newMsg.threadId !== threadIdRef.current)
+						return
+					setMessages((prev) => {
+						if (prev.some((m) => m.id === newMsg.id)) return prev
+						return [...prev, newMsg]
+					})
+				}
+			)
+			.subscribe()
+
 		return () => {
 			mounted = false
-			clearInterval(polling.current)
+			supabase.removeChannel(channel)
 		}
 	}, [eventId])
 

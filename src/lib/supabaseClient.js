@@ -1,27 +1,16 @@
 import { createClient } from "@supabase/supabase-js"
 
-// Expect env vars:
-// Reads ONLY from environment variables. Do *not* hardcode keys here.
-// Required (public): NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
-// Optional (server): SUPABASE_SERVICE_ROLE_KEY (never expose client-side)
-
-// Support multiple possible naming conventions so you don't have to rename what the Vercel integration created.
-// Priority order: explicit NEXT_PUBLIC_* (standard) -> plain SUPABASE_* -> odd prefixed variants.
+// Support multiple env var naming conventions; prefer NEXT_PUBLIC_* for client-side use
 const supabaseUrl =
-	process.env.NEXT_PUBLIC_SUPABASE_URL ||
-	process.env.SUPABASE_URL ||
-	process.env.SUPABASE_NEXT_PUBLIC_SUPABASE_URL ||
-	""
+	process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || ""
 
 const supabaseAnonKey =
 	process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
 	process.env.SUPABASE_ANON_KEY ||
-	process.env.SUPABASE_NEXT_PUBLIC_SUPABASE_ANON_KEY ||
 	""
 
 if (!supabaseUrl || !supabaseAnonKey) {
 	if (typeof window !== "undefined") {
-		// Surface clearer error in browser console
 		console.error(
 			"[Supabase] Missing env vars NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY"
 		)
@@ -33,6 +22,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+	realtime: { params: { eventsPerSecond: 25 } },
 	auth: {
 		persistSession: true,
 		autoRefreshToken: true,
@@ -51,3 +41,5 @@ export function getServiceClient() {
 		auth: { persistSession: false },
 	})
 }
+
+export default supabase
