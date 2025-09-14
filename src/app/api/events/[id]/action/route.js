@@ -1,10 +1,18 @@
 import { prisma } from "@/lib/prismaClient"
 import { NextResponse } from "next/server"
-import { ensureArtist } from "@/lib/authServer"
+import { getCurrentUser, ensureArtistAccess } from "@/lib/authServer"
 
 export async function POST(req, { params }) {
 	const { id } = params
-	const artist = await ensureArtist(req)
+	// Validate the caller via authServer helpers. getCurrentUser reads x-artist-id header for now.
+	const caller = await getCurrentUser(req)
+	if (!caller)
+		return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+	// Ensure caller is an artist and get artist record
+	const { artist } = await ensureArtistAccess(
+		caller.firebaseUid,
+		caller.displayName
+	)
 	const body = await req.json()
 
 	// body.action: "startEvent" | "stopEvent" | "confirmRequest" | "rejectRequest" | etc.
