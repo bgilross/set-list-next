@@ -182,12 +182,16 @@ export const AuthProvider = ({ children }) => {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
-				"x-artist-id": user.uid,
-				"x-display-name": user.displayName || "Artist",
 			},
-			body: JSON.stringify({}),
+			body: JSON.stringify({
+				firebaseUid: user.uid,
+				displayName: user.displayName || "Artist",
+			}),
 		})
-		if (!res.ok) throw new Error("Promotion failed")
+		if (!res.ok) {
+			const json = await res.json().catch(() => ({}))
+			throw new Error(json?.error || "Promotion failed")
+		}
 		// Refresh role via /api/me
 		try {
 			const me = await fetch("/api/me", {
