@@ -21,7 +21,7 @@ const TableDisplay = ({
 	onSaved,
 }) => {
 	const [setlistName, setSetlistName] = useState("")
-	const { user, userSongs, role, promoteToArtist } = useAuth()
+	const { user, userSongs, role, promoteToArtist, setSetlists, setlists } = useAuth()
 	const [saving, setSaving] = useState(false)
 	const [saveStatus, setSaveStatus] = useState("idle") // idle | saving | success | error
 	const { push } = useToast()
@@ -86,6 +86,23 @@ const TableDisplay = ({
 						setTimeout(() => setSaveStatus("idle"), 2000)
 					}
 					onSaved && onSaved()
+					// Update auth context setlists so UI reflects the new/updated setlist immediately
+					try {
+						const saved = json.data
+						if (saved && setSetlists) {
+							setSetlists((prev = []) => {
+								// If updating existing, replace; otherwise prepend new setlist
+								const exists = prev.find((s) => s.id === saved.id)
+								if (exists) {
+									return prev.map((s) => (s.id === saved.id ? { ...s, ...saved } : s))
+								}
+								return [saved, ...prev]
+							})
+						}
+					} catch (e) {
+						// ignore setlist merge errors; UI will still work after refresh
+						console.warn('Failed to merge saved setlist into context', e)
+					}
 				} else {
 					throw new Error(json.error || "save failed")
 				}

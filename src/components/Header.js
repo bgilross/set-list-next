@@ -40,10 +40,18 @@ const Header = ({ user, onLogin }) => {
 					<ul className="flex items-center gap-8 text-white/80 text-sm font-semibold">
 						<li>
 							<Link
-								href="/setlists"
+								href="/"
 								className="px-3 py-1 rounded-full hover:bg-white/10 hover:text-white transition"
 							>
 								Dashboard
+							</Link>
+						</li>
+						<li>
+							<Link
+								href="/setlists"
+								className="px-3 py-1 rounded-full hover:bg-white/10 hover:text-white transition"
+							>
+								Set Lists
 							</Link>
 						</li>
 						<li>
