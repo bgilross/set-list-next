@@ -1,5 +1,6 @@
 "use client"
 import React, { useEffect, useRef, useCallback } from "react"
+import { createPortal } from "react-dom"
 
 /*
 BaseModal: shared modal shell for consistent styling & layering.
@@ -110,25 +111,33 @@ export default function BaseModal({
 		[onClose]
 	)
 
-	if (!open) return null
-	return (
-		<div
-			className={`fixed inset-0 z-[${z}] flex items-center justify-center p-4`}
-			onMouseDown={onBackdropClick}
-			role="presentation"
-		>
-			<div
-				className={`absolute inset-0 bg-blue-950/60 backdrop-blur-sm ${backdropClass}`}
-			/>
-			<div
-				ref={panelRef}
-				role="dialog"
-				aria-modal="true"
-				aria-label={label}
-				className={`relative w-full ${maxWidth} bg-white rounded-2xl shadow-2xl border border-blue-200 flex flex-col max-h-[85vh] outline-none ${panelClass}`}
-			>
-				{children}
-			</div>
-		</div>
-	)
+  if (!open) return null
+
+  const node = (
+	<div
+	  style={{ zIndex: z }}
+	  className={`fixed inset-0 flex items-center justify-center p-4`}
+	  onMouseDown={onBackdropClick}
+	  role="presentation"
+	>
+	  <div
+		className={`absolute inset-0 bg-blue-950/60 backdrop-blur-sm ${backdropClass}`}
+	  />
+	  <div
+		ref={panelRef}
+		role="dialog"
+		aria-modal="true"
+		aria-label={label}
+		className={`relative w-full ${maxWidth} bg-white rounded-2xl shadow-2xl border border-blue-200 flex flex-col max-h-[85vh] outline-none ${panelClass}`}
+	  >
+		{children}
+	  </div>
+	</div>
+  )
+
+  // Portal to body to avoid stacking context issues
+  if (typeof document !== "undefined") {
+	return createPortal(node, document.body)
+  }
+  return node
 }
