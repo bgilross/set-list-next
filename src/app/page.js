@@ -1,10 +1,6 @@
 "use client"
-import Main from "../components/Main"
+import DashboardPage from "./dashboard/page"
 
 export default function Home() {
-	return (
-		<div>
-			<Main />
-		</div>
-	)
+  return <DashboardPage />
 }
