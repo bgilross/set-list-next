@@ -28,3 +28,37 @@ export async function POST(req) {
     return NextResponse.json({ error: e.message || String(e) }, { status: 400 })
   }
 }
+
+// GET /api/events?artistId=... (if artistId omitted, use current user)
+export async function GET(req) {
+  try {
+    const url = new URL(req.url)
+    const artistIdParam = url.searchParams.get("artistId")
+
+    // If artistId provided, try to return public events for that artist (no auth required)
+    if (artistIdParam) {
+      const events = await prisma.event.findMany({
+        where: { artistId: artistIdParam },
+        orderBy: { startsAt: "asc" },
+        take: 100,
+      })
+      return NextResponse.json({ success: true, data: events })
+    }
+
+    // Otherwise, require authenticated artist
+    const caller = await getCurrentUser(req)
+    if (!caller) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const { artist } = await ensureArtistAccess(caller.firebaseUid, caller.displayName)
+
+    const now = new Date()
+    const events = await prisma.event.findMany({
+      where: { artistId: artist.id, OR: [{ startsAt: null }, { startsAt: { gte: now } }] },
+      orderBy: { startsAt: "asc" },
+      take: 200,
+      include: { setlist: { select: { id: true, name: true } } },
+    })
+    return NextResponse.json({ success: true, data: events })
+  } catch (e) {
+    return NextResponse.json({ error: e.message || String(e) }, { status: 400 })
+  }
+}
