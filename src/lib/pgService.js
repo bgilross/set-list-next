@@ -220,11 +220,14 @@ export async function createSongRequestPg({
 	artistId,
 	setlistId = null,
 	songId = null,
-	rawTitle = null,
-	audienceRef = null,
+	rawSongTitle: rawSongTitleParam = null, // preferred field name (schema)
+	rawTitle = null, // backwards compatibility from earlier client usage
+	audienceSession = null, // renamed from audienceRef to match schema
 }) {
 	if (!artistId) throw new Error("artistId required")
-	if (!songId && !rawTitle) throw new Error("songId or rawTitle required")
+	const rawSongTitle = rawSongTitleParam || rawTitle || null
+	if (!songId && !rawSongTitle)
+		throw new Error("songId or rawSongTitle (rawTitle) required")
 	// Basic validation (ensure song belongs to artist if provided)
 	if (songId) {
 		const song = await prisma.song.findFirst({
@@ -237,9 +240,9 @@ export async function createSongRequestPg({
 			artistId,
 			setlistId,
 			songId,
-			rawTitle,
+			rawSongTitle,
 			status: "PENDING",
-			audienceRef,
+			audienceSession,
 		},
 		include: { song: true },
 	})
@@ -286,8 +289,10 @@ function serializeRequest(r) {
 					spotifyId: r.song.spotifyId,
 			  }
 			: null,
-		rawTitle: r.rawTitle,
+		// Return both canonical field and legacy alias for any older client code
+		rawSongTitle: r.rawSongTitle || null,
+		rawTitle: r.rawSongTitle || null,
 		setlistId: r.setlistId,
-		audienceRef: r.audienceRef,
+		audienceSession: r.audienceSession,
 	}
 }

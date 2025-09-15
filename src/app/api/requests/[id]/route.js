@@ -21,3 +21,27 @@ export async function PATCH(req, { params }) {
 		return NextResponse.json({ error: e.message }, { status: 400 })
 	}
 }
+
+// DELETE /api/requests/:id - permanently remove a pending request owned by the artist
+export async function DELETE(req, { params }) {
+	try {
+		const { id } = params
+		const firebaseUid = req.headers.get("x-artist-id")
+		if (!firebaseUid) {
+			return NextResponse.json({ error: "artistId missing" }, { status: 401 })
+		}
+		const [{ prisma }, { ensureArtistAccess }] = await Promise.all([
+			import("@/lib/prismaClient"),
+			import("@/lib/authServer"),
+		])
+		const { artist } = await ensureArtistAccess(firebaseUid, "Artist")
+		const existing = await prisma.songRequest.findUnique({ where: { id } })
+		if (!existing || existing.artistId !== artist.id) {
+			return NextResponse.json({ error: "Not found" }, { status: 404 })
+		}
+		await prisma.songRequest.delete({ where: { id } })
+		return NextResponse.json({ success: true })
+	} catch (e) {
+		return NextResponse.json({ error: e.message }, { status: 400 })
+	}
+}

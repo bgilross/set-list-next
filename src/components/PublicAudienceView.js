@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useState, useMemo } from "react"
 import { useToast } from "@/lib/ToastContext"
+import { useAuth } from "@/lib/AuthContext"
 import SortableTable from "@/components/SortableTable"
 
 async function resolveSlug(slug) {
@@ -17,6 +18,7 @@ async function resolveSlug(slug) {
 }
 
 export default function PublicAudienceView({ slug }) {
+	const { user } = useAuth()
 	const [artistId, setArtistId] = useState(null)
 	const [activeSetlistId, setActiveSetlistId] = useState(null)
 	const [profile, setProfile] = useState(null)
@@ -48,7 +50,9 @@ export default function PublicAudienceView({ slug }) {
 					)
 					const j = await r.json()
 					if (r.ok && j.success) setSetlistDoc(j.data)
-				} catch {}
+				} catch (e) {
+					// ignore
+				}
 			}
 			setStatus("ready")
 		})()
@@ -165,21 +169,31 @@ export default function PublicAudienceView({ slug }) {
 										className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full bg-green-600 text-white hover:bg-green-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
 										onClick={async () => {
 											try {
+												const payload = {
+													rawSongTitle: row.name,
+													setlistId: activeSetlistId,
+												}
+												if (user?.uid) payload.artistId = user.uid
 												const res = await fetch("/api/requests", {
 													method: "POST",
 													headers: {
 														"Content-Type": "application/json",
 														"x-artist-guid": artistId,
 													},
-													body: JSON.stringify({
-														rawTitle: row.name,
-														setlistId: activeSetlistId,
-													}),
+													body: JSON.stringify(payload),
 												})
-												if (!res.ok) throw new Error("request failed")
+												const json = await res.json().catch(() => ({}))
+												if (!res.ok || !json.success) {
+													push(json.error || "Could not send request", {
+														type: "error",
+													})
+													return
+												}
 												push("Request sent", { type: "success" })
 											} catch (e) {
-												push("Could not send request", { type: "error" })
+												push(e.message || "Could not send request", {
+													type: "error",
+												})
 											}
 										}}
 									>

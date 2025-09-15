@@ -81,6 +81,31 @@ export default function ProfilePage() {
 		load()
 	}, [user])
 
+	// Track whether any setlist is currently active and public (profile is live)
+	const [isLive, setIsLive] = useState(false)
+	useEffect(() => {
+		const checkLive = async () => {
+			if (!user || role !== "ARTIST") return
+			try {
+				const res = await fetch(
+					`/api/setlists?artistId=${encodeURIComponent(artistId)}`,
+					{
+						headers: { "x-artist-id": user.uid },
+						cache: "no-store",
+					}
+				)
+				const json = await res.json()
+				if (res.ok && json.success && Array.isArray(json.data)) {
+					const found = json.data.some((s) => s.isActive && s.isPublic)
+					setIsLive(Boolean(found))
+				}
+			} catch (e) {
+				// ignore
+			}
+		}
+		checkLive()
+	}, [user, role, artistId])
+
 	const saveArtist = async () => {
 		if (!user) return
 		setSavingProfile(true)
@@ -104,6 +129,55 @@ export default function ProfilePage() {
 		}
 	}
 
+	// Make the most recently updated setlist active & public
+	const makeProfileLive = async () => {
+		if (!user || role !== "ARTIST") {
+			push("You must be an artist to make your profile live", { type: "error" })
+			return
+		}
+		setSavingProfile(true)
+		try {
+			// Ask server for the artist's active or most recent setlist id
+			const resList = await fetch(
+				`/api/setlists?artistId=${encodeURIComponent(artistId)}`,
+				{
+					headers: { "x-artist-id": user.uid },
+					cache: "no-store",
+				}
+			)
+			const jl = await resList.json()
+			const setlist =
+				Array.isArray(jl?.data) && jl.data.length ? jl.data[0] : null
+			if (!setlist) {
+				push("No setlists found to publish", { type: "error" })
+				return
+			}
+			// Patch setlist status: isActive=true, isPublic=true
+			const res = await fetch("/api/setlists/status", {
+				method: "PATCH",
+				headers: {
+					"Content-Type": "application/json",
+					"x-artist-id": user.uid,
+				},
+				body: JSON.stringify({
+					id: setlist.id,
+					isActive: true,
+					isPublic: true,
+				}),
+			})
+			const j = await res.json()
+			if (res.ok && j.success) {
+				push("Your profile is now live", { type: "success" })
+			} else {
+				push(j.error || "Failed to make profile live", { type: "error" })
+			}
+		} catch (e) {
+			push(e.message || "Failed to make profile live", { type: "error" })
+		} finally {
+			setSavingProfile(false)
+		}
+	}
+
 	if (loading) return <div className="p-6">Loading…</div>
 	if (!user) return <div className="p-6">Sign in to view your profile.</div>
 
@@ -117,7 +191,14 @@ export default function ProfilePage() {
 						sx={{ width: 64, height: 64 }}
 					/>
 					<Box>
-						<Typography variant="h6">{user.displayName || "User"}</Typography>
+						<div className="flex items-center gap-3">
+							<Typography variant="h6">{user.displayName || "User"}</Typography>
+							{isLive && (
+								<span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-xs font-semibold">
+									Live
+								</span>
+							)}
+						</div>
 						<Typography
 							variant="body2"
 							color="text.secondary"
@@ -231,13 +312,24 @@ export default function ProfilePage() {
 							disabled={loadingProfile || role !== "ARTIST"}
 						/>
 						<div>
-							<Button
-								onClick={saveArtist}
-								disabled={savingProfile || role !== "ARTIST"}
-								variant="contained"
-							>
-								{savingProfile ? "Saving…" : "Save"}
-							</Button>
+							<div className="flex gap-2 items-center">
+								<Button
+									onClick={saveArtist}
+									disabled={savingProfile || role !== "ARTIST"}
+									variant="contained"
+								>
+									{savingProfile ? "Saving…" : "Save"}
+								</Button>
+								{role === "ARTIST" && (
+									<Button
+										variant="outlined"
+										onClick={makeProfileLive}
+										disabled={savingProfile}
+									>
+										Make Profile Live
+									</Button>
+								)}
+							</div>
 						</div>
 					</Box>
 				</Box>
