@@ -54,6 +54,14 @@ const Header = ({ user, onLogin }) => {
 								Profile
 							</Link>
 						</li>
+						<li>
+							<Link
+								href="/users"
+								className="px-3 py-1 rounded-full hover:bg-white/10 hover:text-white transition"
+							>
+								Live Artists
+							</Link>
+						</li>
 						{role === "ARTIST" && (
 							<li>
 								<Link
@@ -122,6 +130,15 @@ const Header = ({ user, onLogin }) => {
 								onClick={() => setMobileOpen(false)}
 							>
 								Profile
+							</Link>
+						</li>
+						<li>
+							<Link
+								href="/users"
+								className="block w-full px-3 py-2 rounded-lg hover:bg-white/10"
+								onClick={() => setMobileOpen(false)}
+							>
+								Live Artists
 							</Link>
 						</li>
 						{role === "ARTIST" && (
